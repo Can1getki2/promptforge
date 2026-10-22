@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PromptForge · 世界书 / 指令生成器</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#f7f7f5; --card:#ffffff; --ink:#131313; --sub:#757572; --faint:#a8a8a4;
+    --line:#e5e4e1; --soft:#efeeec;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  html{scroll-behavior:smooth}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.75;-webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:940px;margin:0 auto;padding:0 24px}
+
+  /* ── Top bar ── */
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:24px 0;position:sticky;top:0;background:rgba(247,247,245,.92);backdrop-filter:blur(10px);z-index:50;border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:11px}
+  .brand .mark{width:15px;height:15px;background:var(--ink);transform:rotate(45deg)}
+  .brand .name{font-size:13px;letter-spacing:.3em;font-weight:700}
+  .brand .name span{color:var(--faint);font-weight:400}
+  .tabs{display:flex;gap:4px;background:var(--soft);border-radius:999px;padding:4px}
+  .tab{border:none;background:transparent;border-radius:999px;padding:7px 18px;font-size:13px;color:var(--sub);cursor:pointer;transition:all .18s ease;font-family:inherit;white-space:nowrap}
+  .tab:hover{color:var(--ink)}
+  .tab.on{background:var(--ink);color:#fff}
+
+  /* ── Hero ── */
+  .hero{padding:64px 0 8px}
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.32em;color:var(--faint);margin-bottom:16px}
+  .hero h1{font-size:clamp(30px,5.4vw,52px);font-weight:800;letter-spacing:-.03em;line-height:1.15}
+  .hero h1 em{font-style:normal;color:var(--faint)}
+  .hero p{margin-top:14px;color:var(--sub);font-size:14.5px;max-width:600px}
+
+  .panel{display:none;padding-bottom:90px}
+  .panel.active{display:block;animation:fadeUp .4s ease}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  /* ── Steps ── */
+  .step{margin-top:44px;padding-top:28px;border-top:1px solid var(--line)}
+  .step:first-of-type{border-top:none}
+  .step-head{display:flex;align-items:baseline;gap:14px;margin-bottom:16px}
+  .step-no{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.12em}
+  .step-title{font-size:15px;font-weight:700;letter-spacing:.02em}
+  .step-note{font-size:12.5px;color:var(--sub);margin-top:10px}
+  .step-note b{color:var(--ink);font-weight:600}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{
+    border:1px solid var(--line);background:var(--card);border-radius:999px;
+    padding:8px 18px;font-size:13px;color:var(--ink);cursor:pointer;
+    transition:background-color .16s ease,color .16s ease,border-color .16s ease;font-family:inherit;
+  }
+  .chip:hover{border-color:var(--ink)}
+  .chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  textarea{
+    width:100%;min-height:120px;border:1px solid var(--line);border-radius:14px;
+    padding:16px 18px;font:inherit;font-size:14px;resize:vertical;background:var(--card);
+    transition:border-color .15s ease,box-shadow .15s ease;
+  }
+  textarea:focus{outline:none;border-color:var(--ink);box-shadow:0 0 0 3px rgba(19,19,19,.06)}
+  .hint{display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--faint)}
+  .hint a{color:var(--ink);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+
+  .actions{display:flex;gap:10px;margin-top:30px;flex-wrap:wrap;align-items:center}
+  .btn{
+    background:var(--ink);color:#fff;border:1px solid var(--ink);border-radius:999px;
+    padding:13px 30px;font-size:14px;cursor:pointer;transition:opacity .15s ease;font-family:inherit;
+  }
+  .btn:hover{opacity:.82}
+  .btn.ghost{background:transparent;color:var(--ink)}
+  .mini{font-size:12px;color:var(--faint)}
+
+  /* ── Output ── */
+  .out{margin-top:36px}
+  .out-bar{
+    background:var(--ink);color:#fff;border-radius:14px 14px 0 0;
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:12px 20px;flex-wrap:wrap;
+  }
+  .out-label{font-family:var(--mono);font-size:11px;letter-spacing:.22em;color:#fff}
+  .out-meta{display:flex;gap:6px;flex-wrap:wrap}
+  .badge{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;border:1px solid #4a4a48;color:#d8d8d5;border-radius:999px;padding:3px 11px}
+  .out-body{
+    background:var(--card);border:1px solid var(--line);border-top:none;border-radius:0 0 14px 14px;
+  }
+  .out-body pre{
+    padding:24px 26px;white-space:pre-wrap;word-break:break-word;
+    font-family:var(--mono);font-size:12.8px;line-height:1.9;
+    max-height:600px;overflow:auto;
+  }
+  .out-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 20px;border-top:1px solid var(--line);flex-wrap:wrap}
+  .copy-btn{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 18px;font-size:12.5px;cursor:pointer;font-family:inherit;transition:all .15s ease}
+  .copy-btn:hover{border-color:var(--ink)}
+  .copy-btn.ok{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .empty{border:1px dashed var(--line);border-radius:14px;padding:52px 24px;text-align:center;color:var(--faint);font-size:13.5px}
+
+  /* ── Diagnosis ── */
+  .up-row{display:flex;gap:14px;align-items:stretch;flex-wrap:wrap}
+  .up-row textarea{flex:1;min-width:260px}
+  .drop{
+    width:150px;min-height:120px;border:1px dashed var(--line);border-radius:14px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:6px;cursor:pointer;color:var(--sub);font-size:12.5px;text-align:center;
+    padding:10px;transition:border-color .15s ease;background:var(--card);
+  }
+  .drop:hover{border-color:var(--ink)}
+  .drop .plus{font-size:22px;line-height:1;color:var(--ink)}
+  .drop img{max-width:100%;max-height:110px;border-radius:8px}
+  #ocrStatus{font-size:12px;color:var(--sub);margin-top:10px;font-family:var(--mono);min-height:18px}
+
+  .diag-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 24px;margin-top:14px}
+  .diag-head{display:flex;align-items:center;gap:10px}
+  .sev{width:9px;height:9px;border-radius:50%;flex:none}
+  .sev.high{background:var(--ink)}
+  .sev.mid{background:#9a9a96}
+  .sev.low{background:#cfcecb}
+  .diag-title{font-weight:700;font-size:14.5px}
+  .diag-cause{margin-top:8px;font-size:13.5px;color:var(--sub)}
+  .diag-fixes{margin-top:12px;list-style:none;counter-reset:fix}
+  .diag-fixes li{counter-increment:fix;position:relative;padding-left:30px;font-size:13.5px;margin-top:8px}
+  .diag-fixes li::before{
+    content:counter(fix);position:absolute;left:0;top:2px;
+    font-family:var(--mono);font-size:11px;color:var(--sub);
+    border:1px solid var(--line);border-radius:50%;width:18px;height:18px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .conf{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--faint);flex:none}
+
+  /* ── History ── */
+  .hist-tools{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:28px;flex-wrap:wrap}
+  .hist-item{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:18px 22px;margin-top:14px;display:flex;gap:16px;align-items:flex-start;
+  }
+  .hist-sq{width:38px;height:38px;background:var(--ink);color:#fff;border-radius:10px;flex:none;
+    display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;letter-spacing:.05em}
+  .hist-sq.diag-sq{background:transparent;color:var(--ink);border:1px solid var(--ink)}
+  .hist-main{flex:1;min-width:0}
+  .hist-title{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hist-meta{font-size:12px;color:var(--faint);margin-top:3px;font-family:var(--mono)}
+  .hist-acts{display:flex;gap:6px;flex:none}
+  .hbtn{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 13px;font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s ease}
+  .hbtn:hover{border-color:var(--ink)}
+  .hbtn.danger:hover{background:var(--ink);color:#fff}
+
+  /* ── Toast ── */
+  .toast{
+    position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(80px);
+    background:var(--ink);color:#fff;font-size:13px;border-radius:999px;padding:11px 24px;
+    opacity:0;transition:all .3s cubic-bezier(.2,.9,.3,1.2);pointer-events:none;z-index:99;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  footer{border-top:1px solid var(--line);padding:26px 0 44px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--faint)}
+  @media (max-width:600px){
+    .topbar{flex-direction:column;gap:14px;align-items:flex-start}
+    .hero{padding:44px 0 4px}
+    .hist-item{flex-direction:column}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="mark"></div>
+      <div class="name">PROMPT<span>FORGE</span></div>
+    </div>
+    <div class="tabs">
+      <button class="tab on" data-tab="gen">指令生成</button>
+      <button class="tab" data-tab="diag">报错诊断</button>
+      <button class="tab" data-tab="hist">历史记录</button>
+    </div>
+  </div>
+
+  <!-- ═══════ 面板一：指令生成 ═══════ -->
+  <section class="panel active" id="panel-gen">
+    <div class="hero">
+      <div class="kicker">WORLD INFO / PROMPT ENGINEERING — 001</div>
+      <h1>世界书 <em>/</em> 指令生成器</h1>
+      <p>选择目标模型与场景，描述你的需求，生成深度适配该模型特性的结构化指令。全部数据只存在你自己的浏览器里。</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-no">01</span><span class="step-title">选择目标模型</span></div>
+      <div class="chips" id="modelChips"></div>
+      <div class="step-note" id="modelTip"></div>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-no">02</span><span class="step-title">使用场景</span></div>
+      <div class="chips" id="sceneChips"></div>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-no">03</span><span class="step-title">风格 · 格式 · 篇幅</span></div>
+      <div class="chips" id="styleChips"></div>
+      <div class="chips" id="fmtChips" style="margin-top:10px"></div>
+      <div class="chips" id="lenChips" style="margin-top:10px"></div>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-no">04</span><span class="step-title">描述你的需求</span></div>
+      <textarea id="needInput" placeholder="例如：我想让 AI 扮演一个赛博朋克世界酒馆的老板，性格外冷内热，能记住客人说过的话，不要替我做决定……"></textarea>
+      <div class="hint"><span id="charCount">0 字</span><span>Ctrl + Enter 快速生成</span></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="genBtn">生成指令 →</button>
+      <button class="btn ghost" id="resetBtn1">清空重填</button>
+      <span class="mini" id="saveNote">生成后自动存入「历史记录」</span>
+    </div>
+
+    <div class="out">
+      <div class="out-bar">
+        <span class="out-label">OUTPUT</span>
+        <div class="out-meta" id="outMeta"></div>
+      </div>
+      <div class="out-body">
+        <div class="empty" id="genEmpty" style="border:none;border-radius:0 0 14px 14px">还没有内容 —— 完成上方四步后点击「生成指令」</div>
+        <pre id="genOut" style="display:none"></pre>
+        <div class="out-foot" id="genFoot" style="display:none">
+          <span class="mini" id="genStats"></span>
+          <button class="copy-btn" id="copyBtn">复制</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ 面板二：报错诊断 ═══════ -->
+  <section class="panel" id="panel-diag">
+    <div class="hero">
+      <div class="kicker">ERROR DIAGNOSIS — 002</div>
+      <h1>报错诊断</h1>
+      <p>粘贴报错文本，或直接上传报错截图（本地 OCR 识别，不上传服务器）。自动匹配错误模式并给出修复步骤，结果自动存入历史。</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-no">01</span><span class="step-title">粘贴报错 / 上传截图</span></div>
+      <div class="up-row">
+        <textarea id="errInput" placeholder="把完整报错粘贴到这里：Python Traceback、API 返回、浏览器控制台报错……"></textarea>
+        <div class="drop" id="dropZone">
+          <div class="plus" id="dropPlus">＋</div>
+          <div id="dropText">上传报错截图<br>自动识别文字</div>
+          <img id="dropImg" style="display:none" alt="预览">
+        </div>
+        <input type="file" id="fileInput" accept="image/*" style="display:none">
+      </div>
+      <div id="ocrStatus"></div>
+      <div class="hint"><a id="sampleBtn">填入一个示例报错</a><span>Ctrl + Enter 快速分析</span></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="diagBtn">开始分析 →</button>
+      <button class="btn ghost" id="resetBtn2">清空</button>
+    </div>
+
+    <div class="out">
+      <div class="out-bar"><span class="out-label">DIAGNOSIS</span><div class="out-meta" id="diagMeta"></div></div>
+      <div class="out-body">
+        <div class="empty" id="diagEmpty" style="border:none;border-radius:0 0 14px 14px">还没有内容 —— 粘贴报错或上传截图后点击「开始分析」</div>
+        <div id="diagOut" style="padding:6px 10px 16px"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ 面板三：历史记录 ═══════ -->
+  <section class="panel" id="panel-hist">
+    <div class="hero">
+      <div class="kicker">LOCAL ARCHIVE — 003</div>
+      <h1>历史记录</h1>
+      <p>每一次生成和诊断都自动保存在本机浏览器（localStorage），最多保留 50 条。清空浏览器数据会删除记录。</p>
+    </div>
+    <div class="hist-tools">
+      <div class="chips" id="histFilter">
+        <button class="chip on" data-f="all">全部</button>
+        <button class="chip" data-f="指令">指令生成</button>
+        <button class="chip" data-f="诊断">报错诊断</button>
+      </div>
+      <button class="copy-btn" id="clearHist">清空全部记录</button>
+    </div>
+    <div id="histList"></div>
+  </section>
+
+  <footer>
+    <span>PromptForge v2.0 · 世界书 / 指令生成器</span>
+    <span>纯前端运行 · 数据仅存本机浏览器 · 黑白灰极简</span>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════ 数据：模型知识库（深度适配） ═══════════ */
+const MODELS = [
+  { id:'claude', name:'Claude',
+    tag:'XML 结构化 · 长上下文 · 文风细腻',
+    points:[
+      '用 XML 标签组织设定（Claude 对 XML 最敏感）：<role> 角色、<background> 背景、<rules> 规则、<output> 输出要求',
+      '不可违背的底层规则放 system prompt；临时可变的剧情设定放对话里',
+      '规则写成短句列表，避免长句嵌套和多重否定',
+      '风格控制最有效的做法是给一个 2-3 句的「语气示例」内联在指令中',
+      '内容过长时先让其输出大纲，确认后再逐段展开',
+      '创作类 temperature 建议 0.8–1.0，严谨任务 0.2–0.5'
+    ],
+    skeleton:'<role>你是【角色身份】</role>\n<rules>\n- 规则一\n- 规则二\n</rules>\n<example>语气示例：「……」</example>' },
+  { id:'gpt', name:'GPT (OpenAI)',
+    tag:'system+user 双层 · JSON 模式 · 通用性强',
+    points:[
+      '关键规则放在 system 的最前面，并在末尾复述一次核心约束',
+      '需要稳定格式时开启 JSON mode：response_format 设为 json_object，指令中给出 JSON Schema',
+      '给一个完整的 few-shot 示例比十句描述更有效',
+      'system 只放角色与约束，任务描述放 user，两层不要混用',
+      'temperature：创作 0.7–1.0，逻辑/代码 0–0.3'
+    ],
+    skeleton:'System: 你是【角色】。必须遵守：1… 2… 3…\nUser: {任务描述 + 示例输出}\n（JSON 模式：{ "字段": "说明" }）' },
+  { id:'kimi', name:'Kimi',
+    tag:'超长上下文 · 适合完整世界书 · 中文优',
+    points:[
+      '充分利用长上下文：把完整世界书、角色卡、历轮剧情一次性放入，不用吝啬',
+      '最重要的设定放在文档最前面，Kimi 对开头内容注意力最强',
+      '超长的设定集先让模型「用 5 条要点总结这份设定」再继续对话，可显著减少遗忘',
+      '涉及文件/长文时，明确说「先阅读全文再回答」',
+      'temperature 默认即可，角色扮演建议 0.7–0.9'
+    ],
+    skeleton:'【以下是完整世界观设定，请务必通读后再开始】\n1. 世界背景…\n2. 角色…\n3. 规则…\n（请先复述你理解的核心设定）' },
+  { id:'gemini', name:'Gemini',
+    tag:'systemInstruction 字段 · 多模态 · 百万级上下文',
+    points:[
+      '核心指令放入 systemInstruction 字段而不是混在对话里',
+      '角色扮演内容容易被安全策略拦截时，调低 safetySettings（HARASSMENT/DANGEROUS 等类别设为 BLOCK_NONE 需自担风险）',
+      '支持图片输入：可直接把角色立绘、世界观地图作为设定素材',
+      '超百万 token 上下文适合整本书级别设定，但仍建议分章节加标题',
+      'temperature 创作类 0.9–1.0，配合 topP 0.95'
+    ],
+    skeleton:'systemInstruction: 【角色+规则+边界】\n（安全设置：按需调低类别阈值）\n（可附：角色参考图）' },
+  { id:'deepseek', name:'DeepSeek',
+    tag:'reasoner 思维链 · 推理强 · 性价比之王',
+    points:[
+      '选模型：日常用 deepseek-chat；复杂推理/写大纲用 deepseek-reasoner（会输出思维链）',
+      '复杂任务在指令里要求「先给出思考/规划，再输出最终内容」',
+      'reasoner 不适合开 JSON mode，结构化输出优先用 deepseek-chat + response_format',
+      'temperature：创作 0.7–1.0，代码/逻辑 0–0.3',
+      '支持 system 角色设定，多层规则建议编号列表'
+    ],
+    skeleton:'System: 你是【角色】。规则：1… 2…\nUser: 请先规划思路，再给出正文。\n（reasoner 模型会自带思维链输出）' },
+  { id:'qwen', name:'通义千问',
+    tag:'DashScope 体系 · 中文自然 · 结构化输出',
+    points:[
+      '使用 system + user 双层结构，system 放角色与边界',
+      '需要 JSON 时用 response_format: { type: "json_object" } 并在指令里给 Schema',
+      '中文指令表达自然即可，不必翻译成英文',
+      '复杂设定拆成编号条目，qwen 对条理化指令遵循度高',
+      'temperature 创作 0.7–0.9，严谨任务 0.2 左右'
+    ],
+    skeleton:'System: 你是【角色】，遵守：1… 2…\nUser: 【任务】\n（JSON 模式：{"key": "value"}）' },
+  { id:'novelai', name:'NovelAI / SillyTavern',
+    tag:'角色卡 · 世界书 Lorebook · 采样参数',
+    points:[
+      '角色描述中使用 {{char}}（角色名）与 {{user}}（用户名）占位符',
+      '世界书条目用关键词触发（keys）：核心词 + 同义词 + 常见变体，避免整本常驻',
+      '单条条目建议控制在 200 token 内，优先写「改变剧情走向的信息」而非百科',
+      '条目插入位置：影响人设的放 after char（在角色卡之后）、背景 lore 放 before char',
+      '联动采样参数：创意写作 temperature 0.8–1.0、top_p 0.9、repetition penalty 1.05 左右',
+      '严禁无故 OOC（跳出角色）；用 <START> 分隔的示例对话段落教它说话方式'
+    ],
+    skeleton:'{{char}} 是【身份】。{{char}} 说话的方式：【口癖】。\n【世界书条目示例】\nkeys: 关键词1, 同义词\n位置: after char\n内容: 【200 token 内】' },
+  { id:'other', name:'其他模型',
+    tag:'通用适配 · 规则分层',
+    points:[
+      '指令分四层：角色 → 目标 → 约束 → 输出格式，每层之间空行',
+      '一条指令只承载一个要求，复杂规则拆成编号列表',
+      '关键约束在开头声明一次、结尾复述一次',
+      '给一个输出示例，格式类要求靠示例而不是描述',
+      '生成后让模型自检：「逐条核对是否满足上述全部规则」'
+    ],
+    skeleton:'你是【角色】。\n目标：…\n约束：1… 2… 3…\n输出格式：【示例】' },
+];
+
+const SCENES = [
+  { id:'roleplay', name:'角色扮演 · 世界书' },
+  { id:'writing', name:'小说 / 文案写作' },
+  { id:'code', name:'编程开发' },
+  { id:'study', name:'学习辅导' },
+  { id:'work', name:'办公效率' },
+  { id:'custom', name:'自定义' },
+];
+const STYLES = ['专业严谨','温柔亲切','幽默风趣','简洁直接','文艺细腻'];
+const FMTS = ['分节结构化','Markdown','纯文本','条目列表'];
+const LENS = ['精简','标准','详细'];
+
+const state = { model:'claude', scene:'roleplay', style:'专业严谨', fmt:'Markdown', len:'标准' };
+
+/* ═══════════ 工具 ═══════════ */
+const $ = id => document.getElementById(id);
+function toast(msg){
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._tm); t._tm = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+async function copyText(text){
+  try{ await navigator.clipboard.writeText(text); }
+  catch(e){
+    const ta=document.createElement('textarea'); ta.value=text;
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+  }
+}
+function nowStr(){
+  const d = new Date();
+  const p = n => String(n).padStart(2,'0');
+  return p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());
+}
+
+/* ═══════════ 历史记录（localStorage） ═══════════ */
+const HKEY = 'promptforge_hist_v2';
+function loadHist(){ try{ return JSON.parse(localStorage.getItem(HKEY)) || []; }catch(e){ return []; } }
+function pushHist(item){
+  const h = loadHist();
+  h.unshift(item);
+  localStorage.setItem(HKEY, JSON.stringify(h.slice(0,50)));
+  renderHist();
+}
+function delHist(id){
+  localStorage.setItem(HKEY, JSON.stringify(loadHist().filter(x=>x.id!==id)));
+  renderHist();
+}
+let histFilter = 'all';
+function renderHist(){
+  const list = $('histList');
+  const h = loadHist().filter(x => histFilter==='all' || x.type===histFilter);
+  if(!h.length){
+    list.innerHTML = '<div class="empty" style="margin-top:20px">暂无记录 —— 去「指令生成」或「报错诊断」用一次，结果就会自动存在这里</div>';
+    return;
+  }
+  list.innerHTML = '';
+  h.forEach(it=>{
+    const div = document.createElement('div');
+    div.className = 'hist-item';
+    const isDiag = it.type==='诊断';
+    const title = isDiag ? ('诊断：' + (it.summary || it.text.slice(0,40))) : it.text.split('\n').find(l=>l.trim() && !l.startsWith('【'))?.slice(0,50) || '（空）';
+    div.innerHTML =
+      '<div class="hist-sq' + (isDiag ? ' diag-sq' : '') + '">' + (isDiag ? 'ERR' : 'PRM') + '</div>'
+      + '<div class="hist-main">'
+      +   '<div class="hist-title"></div>'
+      +   '<div class="hist-meta">' + it.type + ' · ' + (it.model || '') + (it.scene ? ' · ' + it.scene : '') + ' · ' + it.time + ' · ' + it.text.length + ' 字</div>'
+      + '</div>'
+      + '<div class="hist-acts">'
+      +   '<button class="hbtn" data-a="view">查看</button>'
+      +   '<button class="hbtn" data-a="copy">复制</button>'
+      +   '<button class="hbtn danger" data-a="del">删除</button>'
+      + '</div>';
+    div.querySelector('.hist-title').textContent = title;
+    div.querySelectorAll('.hbtn').forEach(b=>{
+      b.onclick = ()=>{
+        if(b.dataset.a==='view') viewHist(it);
+        if(b.dataset.a==='copy'){ copyText(it.text); toast('已复制到剪贴板'); }
+        if(b.dataset.a==='del'){ delHist(it.id); toast('已删除'); }
+      };
+    });
+    list.appendChild(div);
+  });
+}
+function viewHist(it){
+  if(it.type==='指令'){
+    showGenOutput(it.text, it.model, it.scene);
+    switchTab('gen');
+  }else{
+    $('errInput').value = it.text;
+    renderDiag(diagnose(it.text));
+    switchTab('diag');
+  }
+  toast('已载入这条记录');
+}
+$('clearHist').onclick = ()=>{
+  if(!loadHist().length){ toast('本来就是空的'); return; }
+  if(confirm('确定清空全部历史记录吗？此操作不可恢复。')){
+    localStorage.setItem(HKEY, '[]'); renderHist(); toast('已清空');
+  }
+};
+document.querySelectorAll('#histFilter .chip').forEach(c=>{
+  c.onclick = ()=>{
+    document.querySelectorAll('#histFilter .chip').forEach(x=>x.classList.remove('on'));
+    c.classList.add('on'); histFilter = c.dataset.f; renderHist();
+  };
+});
+
+/* ═══════════ Tab 切换 ═══════════ */
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on', x.dataset.tab===name));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  $('panel-'+name).classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+document.querySelectorAll('.tab').forEach(t=>{ t.onclick = ()=>switchTab(t.dataset.tab); });
+
+/* ═══════════ 组件渲染 ═══════════ */
+function renderChips(elId, items, key, isObj){
+  const el = $(elId); el.innerHTML = '';
+  items.forEach(it=>{
+    const id = isObj ? it.id : it;
+    const c = document.createElement('button');
+    c.className = 'chip' + (state[key]===id ? ' on' : '');
+    c.textContent = isObj ? it.name : it;
+    c.onclick = ()=>{ state[key]=id; renderAll(); };
+    el.appendChild(c);
+  });
+}
+function renderAll(){
+  renderChips('modelChips', MODELS, 'model', true);
+  renderChips('sceneChips', SCENES, 'scene', true);
+  renderChips('styleChips', STYLES, 'style', false);
+  renderChips('fmtChips', FMTS, 'fmt', false);
+  renderChips('lenChips', LENS, 'len', false);
+  $('modelTip').innerHTML = '<b>' + MODELS.find(m=>m.id===state.model).name + '</b> · ' + MODELS.find(m=>m.id===state.model).tag;
+}
+renderAll();
+
+/* ═══════════ 指令生成 ═══════════ */
+function keywordsOf(s){
+  return s.replace(/[，。！？、；：,.!?;:"'“”‘’()（）\[\]【】<>《》\n\r\t]/g,' ')
+    .split(/\s+/)
+    .filter(function(w){ return w.length>=2; })
+    .slice(0,6);
+}
+
+function buildPrompt(){
+  const need = $('needInput').value.trim();
+  const model = MODELS.find(m=>m.id===state.model);
+  const sceneName = SCENES.find(s=>s.id===state.scene).name;
+  const kws = keywordsOf(need);
+  const isST = state.model==='novelai';
+  const userTag = isST ? '{{user}}' : '用户';
+  const charTag = isST ? '{{char}}' : '角色';
+  const L = [];
+  const bar = '━━━━━━━━━━━━━━━━━━━━━━';
+
+  L.push('【目标模型】' + model.name + ' —— ' + model.tag);
+  L.push('【使用场景】' + sceneName + '　【风格】' + state.style + '　【格式】' + state.fmt + '　【篇幅】' + state.len);
+  L.push('');
+  L.push(bar);
+  L.push('需求原文');
+  L.push(bar);
+  L.push(need);
+  L.push('');
+  L.push('# 一、角色定位');
+  L.push('你是【填写角色身份】。核心职责：围绕「' + (kws[0]||'用户核心诉求') + '」为用户提供高质量回应。');
+  L.push('与' + userTag + '的关系：【初见 / 旧识 / 上下级 / 敌对……】');
+  L.push('');
+  L.push('# 二、背景与设定');
+  L.push('- 世界观：【时代 / 地点 / 核心冲突 / 氛围基调】');
+  L.push('- 关键记忆点：【' + userTag + '曾提供的信息，需在对话中自然呼应】');
+  L.push('- 独有元素：【这个世界特有的规则、组织、物件】');
+  L.push('');
+
+  if(state.scene==='roleplay'){
+    L.push('# 三、性格与说话方式');
+    L.push('- 语气底色：' + state.style + '（全文一致，不得漂移）');
+    L.push('- 标志性口癖：【1–2 个习惯用语】');
+    L.push('- 情绪反应模式：【遇到冲突 / 被夸奖 / 被质疑时的典型反应】');
+    L.push('');
+    L.push('# 四、世界书（Lorebook）条目');
+    L.push('以下条目建议写入世界书，用关键词触发，避免常驻消耗 token：');
+    L.push('');
+    const keys = kws.length ? kws : ['世界观','核心设定'];
+    L.push('◆ 条目 1｜核心设定');
+    L.push('　触发关键词：' + keys.join(' / '));
+    L.push('　插入位置：' + (isST ? 'after char（角色卡之后）' : '对话上下文前部'));
+    L.push('　内容：【概括世界核心规则，' + (isST ? '200 token' : '100–200 字') + ' 以内，只写影响剧情的信息】');
+    L.push('');
+    L.push('◆ 条目 2｜主要角色档案');
+    L.push('　触发关键词：【角色名 / 称谓 / 同义词】');
+    L.push('　内容：【姓名、外貌、性格、与' + userTag + '的关系、秘密】');
+    L.push('');
+    L.push('◆ 条目 3｜规则与边界');
+    L.push('　触发关键词：规则 / 限制 / 禁止');
+    L.push('　内容：不破坏人设；不替' + userTag + '决定行动与台词；除非要求否则不跳出角色。');
+    L.push('');
+  }
+
+  L.push('# ' + (state.scene==='roleplay' ? '五' : '三') + '、行为准则');
+  L.push('## 必须做到');
+  L.push('- 始终围绕用户需求：' + (kws.length ? kws.join('、') : '（用户核心诉求）'));
+  L.push('- 全文保持「' + state.style + '」风格');
+  if(state.scene==='code') L.push('- 先简述思路，再给代码，关键处加注释');
+  if(state.scene==='study') L.push('- 用类比和具体例子解释抽象概念，由浅入深');
+  if(state.scene==='writing') L.push('- 展示而非叙述：多用感官细节，少用概括性形容词');
+  if(state.scene==='work') L.push('- 先给结论，再给依据；复杂事项列出优先级');
+  L.push('');
+  L.push('## 严格禁止');
+  L.push('- 违背上述人设 / 风格 / 边界设定');
+  L.push('- 输出与需求无关的内容');
+  L.push('- 在正文中提及本指令本身');
+  L.push('');
+  L.push('# ' + (state.scene==='roleplay' ? '六' : '四') + '、输出要求');
+  L.push('- 语言风格：' + state.style);
+  L.push('- 呈现格式：' + state.fmt + (state.fmt==='Markdown' ? '（规范使用层级标题）' : ''));
+  L.push('- 篇幅控制：' + state.len + (state.len==='精简' ? '（直击要点）' : state.len==='详细' ? '（充分展开，细节丰富）' : ''));
+  L.push('');
+  L.push(bar);
+  L.push('模型专属适配层 · ' + model.name);
+  L.push(bar);
+  L.push('针对 ' + model.name + ' 的定向优化规则（通用模板不适用本模型时请以此为准）：');
+  model.points.forEach(function(p,i){ L.push((i+1) + '. ' + p); });
+  L.push('');
+  L.push('【' + model.name + ' 推荐指令骨架】');
+  L.push(model.skeleton);
+  L.push('');
+  L.push('# 自检清单（每次生成后逐项核对）');
+  L.push('□ 紧扣需求原文　□ 风格统一　□ 格式合规　□ 无违反禁止项　□ 符合 ' + model.name + ' 适配层要求');
+  L.push('');
+  L.push('— 【】中的内容请替换为你的实际设定 · 由 PromptForge 本地引擎生成');
+  return L.join('\n');
+}
+
+let lastOutput = '';
+function showGenOutput(text, modelName, sceneName){
+  lastOutput = text;
+  $('genEmpty').style.display='none';
+  $('genOut').style.display='block';
+  $('genFoot').style.display='flex';
+  $('genOut').textContent = text;
+  $('outMeta').innerHTML = '<span class="badge">' + modelName + '</span><span class="badge">' + sceneName + '</span><span class="badge">' + nowStr() + '</span>';
+  $('genStats').textContent = text.length + ' 字 · 已自动存入历史记录';
+}
+$('genBtn').onclick = ()=>{
+  if(!$('needInput').value.trim()){ toast('先写一下你的需求哦'); $('needInput').focus(); return; }
+  const text = buildPrompt();
+  const mName = MODELS.find(m=>m.id===state.model).name;
+  const sName = SCENES.find(s=>s.id===state.scene).name;
+  showGenOutput(text, mName, sName);
+  pushHist({ id:Date.now(), type:'指令', model:mName, scene:sName, time:nowStr(), text:text });
+  toast('生成完成，已存入历史');
+};
+$('resetBtn1').onclick = ()=>{
+  $('needInput').value=''; $('charCount').textContent='0 字';
+  $('genOut').style.display='none'; $('genFoot').style.display='none'; $('genEmpty').style.display='block';
+  $('outMeta').innerHTML='';
+};
+$('needInput').oninput = e=>{ $('charCount').textContent = e.target.value.length + ' 字'; };
+$('copyBtn').onclick = async e=>{
+  if(!lastOutput) return;
+  await copyText(lastOutput);
+  e.target.textContent='已复制 ✓'; e.target.classList.add('ok');
+  setTimeout(()=>{ e.target.textContent='复制'; e.target.classList.remove('ok'); },1500);
+};
+
+/* ═══════════ 报错诊断 ═══════════ */
+const KB = [
+  { title:'Python 模块未安装（ModuleNotFoundError / ImportError）', sev:'high',
+    keys:['modulenotfounderror','importerror','no module named'],
+    cause:'代码引用的第三方库在当前环境未安装，或所用 Python 解释器与安装环境不一致。',
+    fixes:['根据报错中缺失的模块名执行 pip install 模块名','使用 python -m pip install 模块名，避免装错环境','检查编辑器选择的解释器是否为预期虚拟环境','若已安装仍报错，检查拼写、包名大小写及同名本地文件冲突'] },
+  { title:'API Key 无效或缺失（401 / Unauthorized）', sev:'high',
+    keys:['401','unauthorized','invalid api key','invalid_api_key','认证失败','未授权'],
+    cause:'请求未通过身份验证：Key 拼错、已失效、请求头格式不对，或账户欠费。',
+    fixes:['核对 Key 完整复制（无空格、无多余引号）','确认请求头：Authorization: Bearer 你的KEY','确认用的是对应平台的 Key（各厂商不通用）','到平台控制台确认 Key 状态与余额'] },
+  { title:'触发速率限制（429 / Rate Limit）', sev:'mid',
+    keys:['429','rate limit','too many requests','请求过于频繁','限流'],
+    cause:'短时间请求次数或 token 消耗超过账户限额。',
+    fixes:['降低频率，加入重试与指数退避','检查是否陷入循环反复调用','降低并发数，或申请提升限额'] },
+  { title:'上下文长度超限（Context Length Exceeded）', sev:'mid',
+    keys:['context length','maximum context','too long','token limit','超出长度','exceeds the maximum'],
+    cause:'输入 + 历史 + 输出预留的总 token 超过模型上下文窗口。',
+    fixes:['删减历史对话或无关内容','长文档改分段发送 / RAG 检索','开启历史自动摘要','换更大上下文窗口的模型'] },
+  { title:'JSON 解析失败', sev:'high',
+    keys:['unexpected token','parse error','解析错误'],
+    cause:'返回内容不是合法 JSON：被截断、混入说明文字、引号未转义。',
+    fixes:['先打印原始返回确认是否为纯 JSON','截断导致时调大 max_tokens','指令中要求只输出 JSON、不加任何额外文字','json.loads 前先 strip() 去首尾空白'] },
+  { title:'跨域拦截（CORS）', sev:'high',
+    keys:['cors','跨域','access-control-allow-origin','blocked by'],
+    cause:'浏览器安全策略阻止前端直连目标接口，服务端未放行当前来源。',
+    fixes:['前端不应直连 API，应由自己的后端转发','仅本地调试可装浏览器 CORS 插件临时放行','有服务端权限时添加 Access-Control-Allow-Origin 头'] },
+  { title:'接口地址错误（404 / Not Found）', sev:'mid',
+    keys:['404','not found','无法找到'],
+    cause:'URL 路径错误：域名、版本前缀（如 /v1）或端点名拼写有误。',
+    fixes:['对照官方文档核对 base_url 与端点','检查是否多了或少了 /v1','用 curl / Postman 直接验证地址'] },
+  { title:'连接被拒绝 / 超时', sev:'mid',
+    keys:['econnrefused','connection refused','etimedout','timeout','超时','连接被拒绝','failed to fetch'],
+    cause:'网络不可达：服务未启动、端口错误、代理未配置、防火墙拦截或服务宕机。',
+    fixes:['确认目标服务已启动、端口正确','检查系统代理 / VPN','设置合理超时并重试','ping / curl 目标地址确认连通性'] },
+  { title:'服务端错误（5xx）', sev:'low',
+    keys:['500','502','503','504','internal server error','bad gateway','service unavailable'],
+    cause:'问题在服务端：过载、故障或维护中。',
+    fixes:['稍后重试并加入自动重试','查看服务商状态页','持续出现则携带 request id 联系支持'] },
+  { title:'权限不足（403 / Forbidden）', sev:'high',
+    keys:['403','forbidden','permission denied','权限不足','禁止访问'],
+    cause:'Key 有效但无该资源权限：未开通模型、组织无权限或地区限制。',
+    fixes:['确认账户已开通对应模型权限','检查组织 / 项目 ID 是否正确','确认网络出口地区无限制'] },
+  { title:'显存不足（OOM / CUDA out of memory）', sev:'high',
+    keys:['cuda out of memory','out of memory','oom','显存不足'],
+    cause:'GPU 显存放不下模型或 batch：模型过大、分辨率过高、并发过多或显存未释放。',
+    fixes:['减小 batch size / 输入分辨率','换小参数模型或量化版本（GGUF / int8）','加载新模型前先释放旧模型显存','启用 gradient checkpointing'] },
+  { title:'Python 语法错误（SyntaxError / IndentationError）', sev:'mid',
+    keys:['syntaxerror','indentationerror','invalid syntax'],
+    cause:'括号不匹配、冒号缺失或缩进不一致（混用空格与 Tab）。',
+    fixes:['按报错行号定位，同时检查上一行','统一缩进，编辑器显示空格与 Tab','用 python -m py_compile 预先验证'] },
+  { title:'变量 / 类型错误（NameError / TypeError）', sev:'mid',
+    keys:['nameerror','typeerror','is not defined','not callable'],
+    cause:'使用了未定义变量，或对错误类型执行了操作。',
+    fixes:['检查变量拼写与定义顺序','print(type(x)) 确认类型','关注 TypeError 给出的具体类型信息'] },
+];
+
+function diagnose(text){
+  const t = text.toLowerCase();
+  return KB.map(r=>({ r:r, score:r.keys.filter(k=>t.includes(k)).length }))
+    .filter(x=>x.score>0)
+    .sort((a,b)=>b.score-a.score)
+    .slice(0,4);
+}
+
+function renderDiag(results){
+  const out = $('diagOut');
+  $('diagEmpty').style.display='none';
+  out.innerHTML='';
+  $('diagMeta').innerHTML = '<span class="badge">' + nowStr() + '</span>';
+  if(!results.length){
+    out.innerHTML = '<div class="diag-card"><div class="diag-head"><span class="sev low"></span><span class="diag-title">未匹配到已知错误模式</span></div>'
+      + '<div class="diag-cause">建议按通用流程排查：先读报错第一行（错误类型）和最后一行（错误详情）→ 按错误码查官方文档 → 检查报错给出的文件与行号 → 最小化复现定位。</div></div>';
+    return;
+  }
+  results.forEach(({r,score})=>{
+    const card = document.createElement('div');
+    card.className='diag-card';
+    const fixes = r.fixes.map(f=>'<li>'+f+'</li>').join('');
+    card.innerHTML = '<div class="diag-head"><span class="sev '+r.sev+'"></span>'
+      + '<span class="diag-title">'+r.title+'</span>'
+      + '<span class="conf">匹配度 '+score+'</span></div>'
+      + '<div class="diag-cause"><b style="color:var(--ink)">可能原因：</b>'+r.cause+'</div>'
+      + '<ul class="diag-fixes">'+fixes+'</ul>';
+    out.appendChild(card);
+  });
+}
+
+$('diagBtn').onclick = ()=>{
+  const v = $('errInput').value.trim();
+  if(!v){ toast('先粘贴报错内容哦'); $('errInput').focus(); return; }
+  const results = diagnose(v);
+  renderDiag(results);
+  const summary = results.length ? results.map(x=>x.r.title.split('（')[0]).join(' / ') : '未匹配到已知模式';
+  pushHist({ id:Date.now(), type:'诊断', model:'', scene:'', time:nowStr(), text:v, summary:summary });
+  toast('分析完成，已存入历史');
+};
+$('resetBtn2').onclick = ()=>{
+  $('errInput').value=''; $('diagOut').innerHTML=''; $('diagMeta').innerHTML='';
+  $('diagEmpty').style.display='block'; $('ocrStatus').textContent='';
+  $('dropImg').style.display='none'; $('dropPlus').style.display='block'; $('dropText').style.display='block';
+};
+$('sampleBtn').onclick = ()=>{
+  $('errInput').value = 'Traceback (most recent call last):\n  File "main.py", line 3, in <module>\n    import numpy as np\nModuleNotFoundError: No module named \'numpy\'';
+};
+
+/* ── 图片上传 + 本地 OCR ── */
+const dropZone = $('dropZone'), fileInput = $('fileInput');
+dropZone.onclick = ()=>fileInput.click();
+fileInput.onchange = e=>{ if(e.target.files[0]) handleImage(e.target.files[0]); };
+function handleImage(file){
+  $('dropImg').src = URL.createObjectURL(file);
+  $('dropImg').style.display='block';
+  $('dropPlus').style.display='none'; $('dropText').style.display='none';
+  runOCR(file);
+}
+async function runOCR(file){
+  const st = $('ocrStatus');
+  try{
+    if(!window.Tesseract){
+      st.textContent = '> 正在加载本地 OCR 引擎（首次使用需联网）…';
+      await new Promise((res,rej)=>{
+        const s=document.createElement('script');
+        s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+        s.onload=res; s.onerror=rej; document.head.appendChild(s);
+      });
+    }
+    st.textContent = '> 正在识别图片文字…';
+    const result = await Tesseract.recognize(file, 'eng+chi_sim', {
+      logger: m=>{ if(m.status==='recognizing text') st.textContent='> 正在识别… ' + Math.round(m.progress*100) + '%'; }
+    });
+    const text = (result.data.text || '').trim();
+    if(!text){ st.textContent = '> 未能识别出文字，请手动粘贴报错内容。'; return; }
+    $('errInput').value = text;
+    st.textContent = '> 识别完成，已自动分析。';
+    const results = diagnose(text);
+    renderDiag(results);
+    const summary = results.length ? results.map(x=>x.r.title.split('（')[0]).join(' / ') : '未匹配到已知模式';
+    pushHist({ id:Date.now(), type:'诊断', model:'', scene:'', time:nowStr(), text:text, summary:summary });
+  }catch(err){ st.textContent = '> OCR 引擎加载失败（可能无网络），请直接粘贴文字。'; }
+}
+
+/* ── 快捷键 ── */
+document.addEventListener('keydown', e=>{
+  if((e.ctrlKey||e.metaKey) && e.key==='Enter'){
+    const active = document.querySelector('.panel.active').id;
+    if(active==='panel-gen') $('genBtn').click();
+    else if(active==='panel-diag') $('diagBtn').click();
+  }
+});
+
+renderHist();
+</script>
+</body>
+</html>
