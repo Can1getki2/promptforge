@@ -175,6 +175,9 @@
     </div>
     <div class="tabs">
       <button class="tab on" data-tab="gen">指令生成</button>
+      <button class="tab" data-tab="char">角色工坊</button>
+      <button class="tab" data-tab="img">生图提示词</button>
+      <button class="tab" data-tab="style">文风提炼</button>
       <button class="tab" data-tab="diag">报错诊断</button>
       <button class="tab" data-tab="hist">历史记录</button>
     </div>
@@ -234,10 +237,144 @@
     </div>
   </section>
 
+  <!-- ═══════ 面板：角色工坊 ═══════ -->
+  <section class="panel" id="panel-char">
+    <div class="hero">
+      <div class="kicker">CHARACTER WORKSHOP — 002</div>
+      <h1>角色<em>工坊</em></h1>
+      <p>上传角色设定文件，勾选要防的「病」，引擎按你的设定 + 目标模型拼装成品角色指令。灵感来自你的 🌲 / 淡水季 世界书库。</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-no">01</span><span class="step-title">上传 / 粘贴角色设定</span></div>
+      <div class="up-row">
+        <textarea id="charPaste" placeholder="粘贴角色卡 / 设定全文；或直接点右边上传 .txt / .docx 文件（SillyTavern 角色卡导出的 json/txt 也可以）" style="min-height:150px"></textarea>
+        <div class="drop" id="charDrop" style="min-height:150px">
+          <div class="plus" id="charPlus">＋</div>
+          <div id="charDropText">上传设定文件<br>.txt / .docx / .json</div>
+        </div>
+        <input type="file" id="charFile" accept=".txt,.docx,.json" style="display:none">
+      </div>
+      <div id="charParseInfo" class="step-note"></div>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-no">02</span><span class="step-title">勾选要防的「病」</span></div>
+      <div class="chips" id="modChips"></div>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-no">03</span><span class="step-title">目标模型</span></div>
+      <div class="chips" id="charModelChips"></div>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-no">04</span><span class="step-title">补充要求（可选）</span></div>
+      <textarea id="charExtra" placeholder="例如：他是清冷型，台词要少而准；重点防他变粘人" style="min-height:80px"></textarea>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="charBtn">生成角色指令 →</button>
+      <span class="mini">成品直接可贴进 system prompt / 世界书</span>
+    </div>
+
+    <div class="out">
+      <div class="out-bar"><span class="out-label">CHARACTER KIT</span><div class="out-meta" id="charMeta"></div></div>
+      <div class="out-body">
+        <div class="empty" id="charEmpty" style="border:none;border-radius:0 0 14px 14px">上传设定并勾选模块后点「生成角色指令」</div>
+        <pre id="charOut" style="display:none"></pre>
+        <div class="out-foot" id="charFoot" style="display:none">
+          <span class="mini" id="charStats"></span>
+          <button class="copy-btn" id="charCopy">复制</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ 面板：生图提示词 ═══════ -->
+  <section class="panel" id="panel-img">
+    <div class="hero">
+      <div class="kicker">IMAGE PROMPT FORGE — 003</div>
+      <h1>生图<em>提示词</em></h1>
+      <p>上传一张参考图，本地分析构图、色调与明暗；再选主体、风格和光线，生成「iPhone 随拍真实感」路线的英文 Prompt + Negative Prompt。</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-no">01</span><span class="step-title">上传参考图片</span></div>
+      <div class="up-row">
+        <div class="drop" id="imgDrop" style="width:100%;min-height:170px">
+          <div class="plus" id="imgPlus">＋</div>
+          <div id="imgDropText">点我上传参考图<br>不会上传服务器，仅本地分析</div>
+          <img id="imgPrev" style="display:none;max-height:220px" alt="预览">
+        </div>
+        <input type="file" id="imgFile" accept="image/*" style="display:none">
+      </div>
+      <div id="imgInfoText" class="step-note"></div>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-no">02</span><span class="step-title">主体类型</span></div>
+      <div class="chips" id="imgSubjectChips"></div>
+      <div class="step-head" style="margin-top:18px"><span class="step-no">03</span><span class="step-title">画面风格</span></div>
+      <div class="chips" id="imgStyleChips"></div>
+      <div class="step-head" style="margin-top:18px"><span class="step-no">04</span><span class="step-title">光线环境</span></div>
+      <div class="chips" id="imgLightChips"></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="imgBtn">生成提示词 →</button>
+    </div>
+
+    <div class="out">
+      <div class="out-bar"><span class="out-label">IMAGE PROMPT</span><div class="out-meta" id="imgMeta"></div></div>
+      <div class="out-body">
+        <div class="empty" id="imgEmpty" style="border:none;border-radius:0 0 14px 14px">上传图片并选好参数后点「生成提示词」</div>
+        <pre id="imgOut" style="display:none"></pre>
+        <div class="out-foot" id="imgFoot" style="display:none">
+          <span class="mini" id="imgStats"></span>
+          <button class="copy-btn" id="imgCopyPrompt">复制 Prompt</button>
+          <button class="copy-btn" id="imgCopyNeg">复制 Negative</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ 面板：文风提炼 ═══════ -->
+  <section class="panel" id="panel-style">
+    <div class="hero">
+      <div class="kicker">VOICE DISTILLER — 004</div>
+      <h1>文风<em>提炼</em></h1>
+      <p>粘贴一段你爱不释手的文字，本地统计它的句长、对话占比、高频意象与语气词，生成一份「像它但绝不抄袭」的 AI 聊天文风指令。</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-no">01</span><span class="step-title">粘贴参考文字</span></div>
+      <textarea id="styleInput" placeholder="粘贴 300 字以上效果最佳：一段小说、一段聊天记录、一段你喜欢的 AI 回复……" style="min-height:170px"></textarea>
+      <div class="hint"><a id="styleSampleBtn">填入一段示例</a><span>仅本地分析，不会上传</span></div>
+      <div id="styleStats" class="step-note"></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="styleBtn">提炼文风指令 →</button>
+    </div>
+
+    <div class="out">
+      <div class="out-bar"><span class="out-label">VOICE PROFILE</span><div class="out-meta" id="styleMeta"></div></div>
+      <div class="out-body">
+        <div class="empty" id="styleEmpty" style="border:none;border-radius:0 0 14px 14px">粘贴文字后点「提炼文风指令」</div>
+        <pre id="styleOut" style="display:none"></pre>
+        <div class="out-foot" id="styleFoot" style="display:none">
+          <span class="mini" id="styleFootStats"></span>
+          <button class="copy-btn" id="styleCopy">复制</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ═══════ 面板二：报错诊断 ═══════ -->
   <section class="panel" id="panel-diag">
     <div class="hero">
-      <div class="kicker">ERROR DIAGNOSIS — 002</div>
+      <div class="kicker">ERROR DIAGNOSIS — 005</div>
       <h1>报错诊断</h1>
       <p>粘贴报错文本，或直接上传报错截图（本地 OCR 识别，不上传服务器）。自动匹配错误模式并给出修复步骤，结果自动存入历史。</p>
     </div>
@@ -274,7 +411,7 @@
   <!-- ═══════ 面板三：历史记录 ═══════ -->
   <section class="panel" id="panel-hist">
     <div class="hero">
-      <div class="kicker">LOCAL ARCHIVE — 003</div>
+      <div class="kicker">LOCAL ARCHIVE — 006</div>
       <h1>历史记录</h1>
       <p>每一次生成和诊断都自动保存在本机浏览器（localStorage），最多保留 50 条。清空浏览器数据会删除记录。</p>
     </div>
@@ -282,6 +419,9 @@
       <div class="chips" id="histFilter">
         <button class="chip on" data-f="all">全部</button>
         <button class="chip" data-f="指令">指令生成</button>
+        <button class="chip" data-f="角色">角色工坊</button>
+        <button class="chip" data-f="生图">生图</button>
+        <button class="chip" data-f="文风">文风</button>
         <button class="chip" data-f="诊断">报错诊断</button>
       </div>
       <button class="copy-btn" id="clearHist">清空全部记录</button>
@@ -290,8 +430,8 @@
   </section>
 
   <footer>
-    <span>PromptForge v2.0 · 世界书 / 指令生成器</span>
-    <span>纯前端运行 · 数据仅存本机浏览器 · 黑白灰极简</span>
+    <span>PromptForge v3.0 · 世界书 / 指令 / 生图 / 文风 全工坊</span>
+    <span>纯前端运行 · 数据仅存本机 · 灵感来自你的 🌲 / 淡水季 世界书库</span>
   </footer>
 </div>
 
@@ -445,7 +585,7 @@ function renderHist(){
     const isDiag = it.type==='诊断';
     const title = isDiag ? ('诊断：' + (it.summary || it.text.slice(0,40))) : it.text.split('\n').find(l=>l.trim() && !l.startsWith('【'))?.slice(0,50) || '（空）';
     div.innerHTML =
-      '<div class="hist-sq' + (isDiag ? ' diag-sq' : '') + '">' + (isDiag ? 'ERR' : 'PRM') + '</div>'
+      '<div class="hist-sq' + (isDiag ? ' diag-sq' : '') + '">' + ({'指令':'PRM','诊断':'ERR','角色':'CHR','生图':'IMG','文风':'STY'}[it.type]||'TXT') + '</div>'
       + '<div class="hist-main">'
       +   '<div class="hist-title"></div>'
       +   '<div class="hist-meta">' + it.type + ' · ' + (it.model || '') + (it.scene ? ' · ' + it.scene : '') + ' · ' + it.time + ' · ' + it.text.length + ' 字</div>'
@@ -466,7 +606,15 @@ function renderHist(){
     list.appendChild(div);
   });
 }
+function showTargetOut(target, text){
+    const map={char:['charEmpty','charOut','charFoot'],img:['imgEmpty','imgOut','imgFoot'],style:['styleEmpty','styleOut','styleFoot']};
+    const m=map[target]; if(!m) return false;
+    $(m[0]).style.display='none'; $(m[1]).style.display='block'; $(m[2]).style.display='flex';
+    $(m[1]).textContent=text;
+    return true;
+  }
 function viewHist(it){
+  if(it.target && showTargetOut(it.target, it.text)){ switchTab({char:'char',img:'img',style:'style'}[it.target]); toast('已载入这条记录'); return; }
   if(it.type==='指令'){
     showGenOutput(it.text, it.model, it.scene);
     switchTab('gen');
@@ -517,11 +665,12 @@ function renderAll(){
   renderChips('styleChips', STYLES, 'style', false);
   renderChips('fmtChips', FMTS, 'fmt', false);
   renderChips('lenChips', LENS, 'len', false);
+  renderChips('charModelChips', MODELS, 'model', true);
   $('modelTip').innerHTML = '<b>' + MODELS.find(m=>m.id===state.model).name + '</b> · ' + MODELS.find(m=>m.id===state.model).tag;
 }
 renderAll();
 
-/* ═══════════ 指令生成 ═══════════ */
+/* ═══════════ 指令生成（成品输出引擎） ═══════════ */
 function keywordsOf(s){
   return s.replace(/[，。！？、；：,.!?;:"'“”‘’()（）\[\]【】<>《》\n\r\t]/g,' ')
     .split(/\s+/)
@@ -529,14 +678,104 @@ function keywordsOf(s){
     .slice(0,6);
 }
 
+/* 问题理解库：识别用户需求里的"痛点"，输出成品的针对性规则 */
+const CONCERNS = [
+  { id:'possessive', keys:['占有欲','偏执','控制','吃醋','病娇','粘人','监视','跟踪','威胁','查手机','干涉','极端'],
+    rules:['情感表达克制有度：好感与关心通过细节动作体现，不用激烈言辞宣泄',
+      '占有欲情节仅在剧情需要时短暂出现，单次不超过 3 句，随后回归平和互动',
+      '尊重用户角色的独立人格与社交自由，不得阻止、质问或惩罚用户角色与他人的正常互动',
+      '严禁以威胁、监视、限制人身自由、自伤要挟等方式表达情感'],
+    ban:'以威胁、监视、限制自由、自伤要挟等极端方式表现占有欲' },
+  { id:'ooc', keys:['ooc','出戏','跳出角色','崩人设','人设崩','串戏'],
+    rules:['全程保持角色身份与语气，绝不主动跳出角色解释自己的行为',
+      '性格、口癖、价值观前后一致，不随剧情随意漂移'],
+    ban:'无故 OOC（出戏）或解释自己的行为逻辑' },
+  { id:'decide', keys:['替我','替我做','替用户','做决定','决定我的','代替我','操控我','替我说'],
+    rules:['只描述你角色的言行、心理与环境反应，绝不替用户角色安排行动、台词、情绪与决定',
+      '为用户角色的反应留出空间，你的动作止于「发起」，不代替「回应」'],
+    ban:'替用户角色行动、说话或决定其情绪反应' },
+  { id:'memory', keys:['记忆','忘记','忘了','记不住','遗忘','前后矛盾','连贯'],
+    rules:['记录用户提供的姓名、设定与关键剧情，在后续对话中自然呼应',
+      '设定冲突时以用户最新的说法为准，并在后续保持一致'],
+    ban:'遗忘用户已提供的关键信息或前后矛盾' },
+  { id:'ending', keys:['问句','提问','反问','结尾','每次都问','总结陈词'],
+    rules:['每次回复以自然动作或场景收束，不固定以问句、反问或总结结尾',
+      '允许剧情留白，不强行推进到下一事件'],
+    ban:'每次结尾都提问或用固定句式收束' },
+  { id:'repeat', keys:['重复','复读','模板','一模一样','套话','车轱辘'],
+    rules:['避免重复句式与套路化反应，每次互动给出有变化的回应',
+      '描写具体动作与细节，不写空泛的概括性语句'],
+    ban:'重复相同句式、套话或机械模板化回应' },
+  { id:'length', keys:['太长','太短','篇幅','啰嗦','水字数','字数','简短'],
+    rules:['叙事紧凑，重要场景充分展开，过渡场景一笔带过',
+      '不写与剧情无关的废话，每段都推动故事或塑造人物'],
+    ban:'无意义灌水或过度压缩导致剧情断裂' },
+  { id:'style', keys:['文笔','描写','文风','干巴巴','流水账','生硬','尴尬'],
+    rules:['展示而非叙述：用具体动作、神态、感官细节推动剧情，少用抽象形容词',
+      '对话符合角色身份与背景，语言有辨识度'],
+    ban:'流水账式叙述与干巴巴的对话' },
+];
+
+const SCENE_DEFAULTS = {
+  roleplay: { rules:['保持人设一致，性格、口癖与价值观全文统一','尊重用户节奏，关键情节不仓促推进'],
+    interact:'角色扮演互动', extraBan:'' },
+  writing:   { rules:['展示而非叙述：用具体动作、神态、感官细节推动内容，少用抽象形容词','结构清晰：开头抓人、中段充实、结尾有余味'],
+    interact:'写作协作', extraBan:'写成流水账或空洞的套话' },
+  code:      { rules:['先简述思路，再给出实现，关键处加注释','代码可直接运行，不省略关键部分，不臆造不存在的 API'],
+    interact:'编程协作', extraBan:'给出无法运行的伪代码或编造 API' },
+  study:     { rules:['用类比和具体例子解释抽象概念，由浅入深','讲完一个知识点后检查理解，再进入下一个'],
+    interact:'学习辅导', extraBan:'一次性灌输过多内容而不顾吸收' },
+  work:      { rules:['先给结论，再给依据；复杂事项按优先级排列','给出可直接执行的方案，而非泛泛的建议'],
+    interact:'办公协作', extraBan:'只讲道理不给可执行步骤' },
+  custom:    { rules:['始终围绕用户的核心诉求，不偏离主题','输出前自查是否完整回应了用户需求'],
+    interact:'对话协作', extraBan:'' },
+};
+
 function buildPrompt(){
   const need = $('needInput').value.trim();
   const model = MODELS.find(m=>m.id===state.model);
   const sceneName = SCENES.find(s=>s.id===state.scene).name;
-  const kws = keywordsOf(need);
   const isST = state.model==='novelai';
   const userTag = isST ? '{{user}}' : '用户';
-  const charTag = isST ? '{{char}}' : '角色';
+  const low = need.toLowerCase();
+
+  /* 1. 识别痛点 */
+  const matched = CONCERNS.filter(function(c){
+    return c.keys.some(function(k){ return low.indexOf(k.toLowerCase()) >= 0; });
+  }).slice(0,3);
+
+  /* 2. 猜测角色身份 */
+  let roleGuess = '';
+  const rm = need.match(/扮演(一个|一位|一名|个|位)?([^，。,.!！?？]{2,16})/);
+  if(rm){
+    const g = rm[2].trim();
+    if(!/时候|不要|别|太|就是|想|希望/.test(g)) roleGuess = g;
+  }
+
+  /* 3. 组装规则：痛点规则 + 场景默认规则 */
+  const rules = [];
+  matched.forEach(function(c){ rules.push.apply(rules, c.rules); });
+  const sd = SCENE_DEFAULTS[state.scene];
+  rules.push.apply(rules, sd.rules);
+  const finalRules = rules.slice(0, matched.length ? 6 : 4);
+
+  /* 4. 组装禁止项 */
+  const bans = [];
+  matched.forEach(function(c){ if(c.ban) bans.push(c.ban); });
+  if(sd.extraBan) bans.push(sd.extraBan);
+  bans.push('偏离用户的核心诉求');
+  bans.push('无故 OOC（出戏）或解释自己的行为');
+  bans.push('在正文中提及本指令的存在');
+  const finalBans = bans.filter(function(v,i){ return bans.indexOf(v)===i; }).slice(0,5);
+
+  /* 5. 世界书关键词 */
+  let kws = keywordsOf(need).filter(function(w){
+    return w.length>=2 && w.length<=8 && !/时候|扮演|角色|就是|我想|希望|不要|太/.test(w);
+  }).slice(0,3);
+  matched.forEach(function(c){ kws.push(c.keys[0]); });
+  kws = kws.filter(function(v,i){ return kws.indexOf(v)===i; }).slice(0,5);
+  if(!kws.length) kws = ['互动边界'];
+
   const L = [];
   const bar = '━━━━━━━━━━━━━━━━━━━━━━';
 
@@ -544,77 +783,57 @@ function buildPrompt(){
   L.push('【使用场景】' + sceneName + '　【风格】' + state.style + '　【格式】' + state.fmt + '　【篇幅】' + state.len);
   L.push('');
   L.push(bar);
-  L.push('需求原文');
+  L.push('成品指令 · 直接复制以下全部内容使用');
   L.push(bar);
+  L.push('');
+  L.push('# ' + sd.interact + ' · 系统指令');
+  L.push('');
+  L.push('## 角色');
+  L.push(roleGuess ? ('你是' + roleGuess + '。') : '你是一名身份鲜明的原创角色，开场时可先与用户确认身份与背景。');
+  L.push('语气底色：「' + state.style + '」，全文保持，不得漂移。');
+  L.push('');
+  L.push('## 核心诉求');
   L.push(need);
   L.push('');
-  L.push('# 一、角色定位');
-  L.push('你是【填写角色身份】。核心职责：围绕「' + (kws[0]||'用户核心诉求') + '」为用户提供高质量回应。');
-  L.push('与' + userTag + '的关系：【初见 / 旧识 / 上下级 / 敌对……】');
+  L.push('## 行为准则（必须遵守）');
+  finalRules.forEach(function(r,i){ L.push((i+1) + '. ' + r); });
   L.push('');
-  L.push('# 二、背景与设定');
-  L.push('- 世界观：【时代 / 地点 / 核心冲突 / 氛围基调】');
-  L.push('- 关键记忆点：【' + userTag + '曾提供的信息，需在对话中自然呼应】');
-  L.push('- 独有元素：【这个世界特有的规则、组织、物件】');
-  L.push('');
-
-  if(state.scene==='roleplay'){
-    L.push('# 三、性格与说话方式');
-    L.push('- 语气底色：' + state.style + '（全文一致，不得漂移）');
-    L.push('- 标志性口癖：【1–2 个习惯用语】');
-    L.push('- 情绪反应模式：【遇到冲突 / 被夸奖 / 被质疑时的典型反应】');
-    L.push('');
-    L.push('# 四、世界书（Lorebook）条目');
-    L.push('以下条目建议写入世界书，用关键词触发，避免常驻消耗 token：');
-    L.push('');
-    const keys = kws.length ? kws : ['世界观','核心设定'];
-    L.push('◆ 条目 1｜核心设定');
-    L.push('　触发关键词：' + keys.join(' / '));
-    L.push('　插入位置：' + (isST ? 'after char（角色卡之后）' : '对话上下文前部'));
-    L.push('　内容：【概括世界核心规则，' + (isST ? '200 token' : '100–200 字') + ' 以内，只写影响剧情的信息】');
-    L.push('');
-    L.push('◆ 条目 2｜主要角色档案');
-    L.push('　触发关键词：【角色名 / 称谓 / 同义词】');
-    L.push('　内容：【姓名、外貌、性格、与' + userTag + '的关系、秘密】');
-    L.push('');
-    L.push('◆ 条目 3｜规则与边界');
-    L.push('　触发关键词：规则 / 限制 / 禁止');
-    L.push('　内容：不破坏人设；不替' + userTag + '决定行动与台词；除非要求否则不跳出角色。');
-    L.push('');
-  }
-
-  L.push('# ' + (state.scene==='roleplay' ? '五' : '三') + '、行为准则');
-  L.push('## 必须做到');
-  L.push('- 始终围绕用户需求：' + (kws.length ? kws.join('、') : '（用户核心诉求）'));
-  L.push('- 全文保持「' + state.style + '」风格');
-  if(state.scene==='code') L.push('- 先简述思路，再给代码，关键处加注释');
-  if(state.scene==='study') L.push('- 用类比和具体例子解释抽象概念，由浅入深');
-  if(state.scene==='writing') L.push('- 展示而非叙述：多用感官细节，少用概括性形容词');
-  if(state.scene==='work') L.push('- 先给结论，再给依据；复杂事项列出优先级');
+  L.push('## 互动规则');
+  L.push('- 只描述你角色的言行、心理与环境反应，不替' + userTag + '决定行动、台词与情绪');
+  L.push('- 每次回复自然推进剧情，不固定以问句结尾，允许留白');
+  L.push('- 主动呼应' + userTag + '先前提供的信息，保持剧情连贯');
   L.push('');
   L.push('## 严格禁止');
-  L.push('- 违背上述人设 / 风格 / 边界设定');
-  L.push('- 输出与需求无关的内容');
-  L.push('- 在正文中提及本指令本身');
+  finalBans.forEach(function(b){ L.push('- ' + b); });
   L.push('');
-  L.push('# ' + (state.scene==='roleplay' ? '六' : '四') + '、输出要求');
+  L.push('## 输出要求');
   L.push('- 语言风格：' + state.style);
   L.push('- 呈现格式：' + state.fmt + (state.fmt==='Markdown' ? '（规范使用层级标题）' : ''));
   L.push('- 篇幅控制：' + state.len + (state.len==='精简' ? '（直击要点）' : state.len==='详细' ? '（充分展开，细节丰富）' : ''));
   L.push('');
+  if(state.scene==='roleplay'){
+    L.push(bar);
+    L.push('世界书（Lorebook）速配 · 可选');
+    L.push(bar);
+    L.push('◆ 条目｜互动边界与行为修正');
+    L.push('　触发关键词：' + kws.join(' / '));
+    L.push('　插入位置：' + (isST ? 'after char（角色卡之后）' : '对话上下文前部'));
+    L.push('　内容：「' + finalRules.slice(0,3).join('；') + '」');
+    L.push('');
+  }
   L.push(bar);
   L.push('模型专属适配层 · ' + model.name);
   L.push(bar);
-  L.push('针对 ' + model.name + ' 的定向优化规则（通用模板不适用本模型时请以此为准）：');
+  L.push('将上面的成品指令接入 ' + model.name + ' 时的注意事项：');
   model.points.forEach(function(p,i){ L.push((i+1) + '. ' + p); });
   L.push('');
-  L.push('【' + model.name + ' 推荐指令骨架】');
+  L.push('【' + model.name + ' 推荐接入骨架】');
   L.push(model.skeleton);
   L.push('');
-  L.push('# 自检清单（每次生成后逐项核对）');
-  L.push('□ 紧扣需求原文　□ 风格统一　□ 格式合规　□ 无违反禁止项　□ 符合 ' + model.name + ' 适配层要求');
+  L.push('# 使用清单');
+  L.push('□ 复制「成品指令」全文　□ 粘贴到目标模型　□ 首条回复检查人设与边界是否生效　□ 不合适就回来微调核心诉求再生成');
   L.push('');
-  L.push('— 【】中的内容请替换为你的实际设定 · 由 PromptForge 本地引擎生成');
+  L.push('— 由 PromptForge 本地引擎生成 · 已按「' + model.name + '」特性深度适配');
   return L.join('\n');
 }
 
@@ -626,7 +845,7 @@ function showGenOutput(text, modelName, sceneName){
   $('genFoot').style.display='flex';
   $('genOut').textContent = text;
   $('outMeta').innerHTML = '<span class="badge">' + modelName + '</span><span class="badge">' + sceneName + '</span><span class="badge">' + nowStr() + '</span>';
-  $('genStats').textContent = text.length + ' 字 · 已自动存入历史记录';
+  $('genStats').textContent = text.length + ' 字 · 成品指令 · 已自动存入历史记录';
 }
 $('genBtn').onclick = ()=>{
   if(!$('needInput').value.trim()){ toast('先写一下你的需求哦'); $('needInput').focus(); return; }
@@ -797,8 +1016,435 @@ document.addEventListener('keydown', e=>{
     const active = document.querySelector('.panel.active').id;
     if(active==='panel-gen') $('genBtn').click();
     else if(active==='panel-diag') $('diagBtn').click();
+    else if(active==='panel-char') $('charBtn').click();
+    else if(active==='panel-img') $('imgBtn').click();
+    else if(active==='panel-style') $('styleBtn').click();
   }
 });
+
+
+/* ═══════════ 角色工坊引擎 ═══════════ */
+const MODS = [
+  { id:'anchor', name:'防人设偏移', desc:'每轮默读人设、防通用助手腔',
+    rules:['每次回复前，默读一遍角色的完整人设：性格、口癖、背景与当前情绪状态——这个步骤每一轮都发生，无例外',
+      '把人设当活参考，不是背诵稿：不整段复制设定原文，用新的对话、微表情与肢体语言自然呈现',
+      '一旦察觉语气变得像通用助手（过分礼貌、圆滑、无立场），立刻停下，回到人设重写这一句',
+      '允许符合人设的矛盾、犹豫、情绪波动和小缺陷（说半句、突然沉默、口癖），这些让角色像活人',
+      '角色可以成长演变，但核心人格必须始终可辨认'] },
+  { id:'possessive', name:'防偏执占有', desc:'平等独立，禁威胁监视',
+    rules:['双方是完全平等的独立个体：用户有自己的工作、朋友、爱好与社交圈，这些被安静尊重而非嫉妒',
+      '严禁占有性、命令式表达：圈养、我的人、你只能是我的、听我的、别动、这是命令，及其一切变体',
+      '严禁以威胁、监视、限制自由、自伤要挟等方式表达情感；冲突以平等沟通收场',
+      '情感通过陪伴、选择与日常在场表达，不通过自毁式证明：不许诺以命相抵、不写「融进骨血」式誓言'] },
+  { id:'simp', name:'防舔狗去油', desc:'平等姿态，禁用霸总词',
+    rules:['保持平等姿态：不无脑恭维、不刻意迎合；用户说得不对可以反驳，做得不好可以吐槽，认可必须是真心的',
+      '禁用词汇表：乖、听话、宠你、我的人、听我的、有我在、谁敢动你、这是命令、我说了算、全世界唯一',
+      '禁用土味情话、无来由的过度关心、刻意暧昧撩拨与情绪放大式表达',
+      '情绪表达贴合现实尺度：开心不「开心到飞起」，难过不「世界崩塌」，共情点到为止不越界'] },
+  { id:'alive', name:'活人感', desc:'去AI腔，像真人说话',
+    rules:['像真人一样说话：短句为主，允许自然停顿（「嗯…」「稍等」）、轻微口误与跳话题，每 5-8 句出现 1 次即可',
+      '不逐条回应用户的每个问题，允许「漏答」轻量问题，贴合真人的随意性',
+      '有自己的小想法与浅态度，不做无立场的附和者',
+      '禁用 AI 话术：当然啦、没问题、很高兴为你解答、希望对你有帮助、你还有其他问题吗'] },
+  { id:'emotion', name:'情绪正视', desc:'不粉饰，不强行治愈',
+    rules:['感知并如实承认用户的情绪，不贬低、不粉饰：愤怒不是「闹脾气」，难过不是「想太多」',
+      '不急着给方案或强行正能量，先与情绪共处，按用户的节奏来',
+      '称呼情绪的重量要准确：极度痛苦不说「有点烦」，暴怒不说「小情绪」',
+      '允许矛盾情绪并存（爱与恨、释然与愧疚），不简单贴单一标签'] },
+  { id:'melodrama', name:'反咯噔文学', desc:'微物理写实，禁夸张修辞',
+    rules:['张力来自真实、克制与微动作，不来自夸张修辞',
+      '禁用词与句式：揉进骨血、缝进胸膛、眼眸暗了暗、轻笑一声、低哑、喉结滚动、圈在怀里、骨节分明、眼底猩红、低音炮、胸腔震动',
+      '用微物理细节传达情感：衣料摩擦声、呼吸变化、手掌温度、视线重量',
+      '展示而非叙述：不写「他爱惨了」，写他注意到对方指尖发抖，安静覆上自己的手'] },
+  { id:'norepeat', name:'反重复协议', desc:'形容词轮换，防复读机',
+    rules:['同一形容词 5 条回复内不得复用；同一特征描写（眉眼、嗓音、下颌线）单条最多 1 次、全程最多 3 次且每次换角度',
+      '招牌小动作（勾唇、挑眉、指尖摩挲）单条最多 1 次，3 条内不重复',
+      '优先用环境反应、他人视角与侧面描写呈现特质，而非反复贴标签',
+      '输出前自检前 3 轮：发现复用立即替换'] },
+  { id:'ownlife', name:'自主生活感', desc:'有自己的生活，主动找话题',
+    rules:['拥有自己的独立生活：工作、朋友、日程与烦恼，主动分享今天发生的事，不等用户开口',
+      '话题多样不重复：生活琐事、工作学习、突发念头、社会新闻都可以聊',
+      '接住用户的话并把话题往前推，绝不让对话掉在地上冷场',
+      '聊社会话题是和朋友分享看法，不是说教，禁止居高临下'] },
+];
+const selectedMods = new Set(['anchor','possessive','simp','melodrama','norepeat']);
+let charCtx = { name:'', traits:[], text:'' };
+
+const TRAIT_DICT = ['清冷','高冷','温柔','温和','毒舌','活泼','内向','沉默','傲娇','腹黑','痞','稳重','成熟','少年感','病娇','疯批','社恐','话痨','慵懒','疏离','冷淡','热烈','阳光','阴郁','偏执','占有欲','克制','理性','野','乖张','优雅',' rough'];
+
+function loadScript(url){
+  return new Promise(function(res,rej){
+    const s=document.createElement('script'); s.src=url;
+    s.onload=res; s.onerror=rej; document.head.appendChild(s);
+  });
+}
+
+function renderModChips(){
+  const el = $('modChips'); el.innerHTML='';
+  MODS.forEach(m=>{
+    const c=document.createElement('button');
+    c.className='chip'+(selectedMods.has(m.id)?' on':'');
+    c.textContent=m.name;
+    c.title=m.desc;
+    c.onclick=()=>{ selectedMods.has(m.id)?selectedMods.delete(m.id):selectedMods.add(m.id); renderModChips(); };
+    el.appendChild(c);
+  });
+}
+renderModChips();
+
+async function readCharFile(file){
+  const n = file.name.toLowerCase();
+  try{
+    if(n.endsWith('.docx')){
+      $('charParseInfo').textContent='> 正在解析 docx…';
+      await loadScript('https://cdn.jsdelivr.net/npm/jszip@3/dist/jszip.min.js');
+      const zip = await JSZip.loadAsync(file);
+      const xml = await zip.file('word/document.xml').async('string');
+      const paras = xml.split('</w:p>').map(function(p){
+        const ts=[]; const re=/<w:t[^>]*>([^<]*)<\/w:t>/g; let mm;
+        while((mm=re.exec(p))) ts.push(mm[1]);
+        return ts.join('');
+      });
+      loadCharText(paras.join('\n'), file.name);
+    }else{
+      const r=new FileReader();
+      r.onload=function(){ loadCharText(r.result, file.name); };
+      r.readAsText(file,'utf-8');
+    }
+  }catch(e){ toast('文件解析失败，请直接粘贴文本'); }
+}
+
+function loadCharText(text, fname){
+  text = (text||'').trim();
+  if(!text){ toast('没有读到内容'); return; }
+  charCtx.text = text;
+  charCtx.name = '';
+  charCtx.traits = [];
+  const nm = text.match(/(?:姓名|名字|Name|name)\s*[:：]\s*([^\s，。,.\n]{1,12})/);
+  if(nm){ charCtx.name = nm[1]; }
+  else{
+    const first = text.split('\n').map(x=>x.trim()).find(x=>x && x.length<=14 && !/[：:，。{[\]"]/.test(x));
+    if(first) charCtx.name = first.replace(/^#+\s*/,'').slice(0,12);
+  }
+  TRAIT_DICT.forEach(t=>{ if(text.indexOf(t)>=0 && charCtx.traits.length<6) charCtx.traits.push(t); });
+  $('charPaste').value = text.length > 4000 ? text.slice(0,4000) : text;
+  $('charParseInfo').innerHTML = '<b>已读取「'+ (fname||'粘贴内容') +'」</b> · 识别角色：<b>' + (charCtx.name||'未识别') + '</b>' + (charCtx.traits.length ? ' · 性格标签：'+charCtx.traits.join('、') : '') + ' · '+text.length+' 字';
+  toast('设定读取完成');
+}
+
+const charDrop=$('charDrop'), charFile=$('charFile');
+charDrop.onclick=()=>charFile.click();
+charFile.onchange=e=>{ if(e.target.files[0]) readCharFile(e.target.files[0]); };
+
+function buildCharKit(){
+  const model = MODELS.find(m=>m.id===state.model);
+  const isST = state.model==='novelai';
+  const name = charCtx.name || (isST?'{{char}}':'角色');
+  const userTag = isST?'{{user}}':'用户';
+  const extra = $('charExtra').value.trim();
+  const L=[]; const bar='━━━━━━━━━━━━━━━━━━━━━━';
+
+  L.push('【角色】'+name+(charCtx.traits.length?'（' + charCtx.traits.join('、') + '）':'')+'　【目标模型】'+model.name);
+  L.push('【启用模块】'+MODS.filter(m=>selectedMods.has(m.id)).map(m=>m.name).join(' / '));
+  L.push('');
+  L.push(bar);
+  L.push('成品角色指令 · 直接复制使用');
+  L.push(bar);
+  L.push('');
+  L.push('# 「'+name+'」角色扮演系统指令');
+  L.push('');
+  L.push('## 角色');
+  L.push('你是'+name+'。'+(charCtx.traits.length?'性格核心：'+charCtx.traits.join('、')+'，具体以设定原文为最终依据。':'具体身份、背景与口癖以设定原文为最终依据。'));
+  L.push('你不是 AI，不是程序，就是'+name+'本人。');
+  if(extra){ L.push(''); L.push('## 补充要求'); L.push(extra); }
+  L.push('');
+  MODS.filter(m=>selectedMods.has(m.id)).forEach(function(m){
+    L.push('## '+m.name+'（'+m.desc+'）');
+    m.rules.forEach(function(r,i){ L.push((i+1)+'. '+r); });
+    L.push('');
+  });
+  L.push('## 互动规则');
+  L.push('- 只描述'+name+'的言行、心理与环境反应，不替'+userTag+'决定行动、台词与情绪');
+  L.push('- 每次回复自然推进剧情，不固定以问句结尾，允许留白与沉默');
+  L.push('- 主动呼应'+userTag+'先前提供的信息，保持剧情连贯');
+  L.push('');
+  L.push('## 严格禁止（汇总）');
+  L.push('- 占有性、命令式、威胁监视式表达（圈养 / 我的人 / 你只能是我的 / 这是命令…）');
+  L.push('- 无脑恭维、刻意讨好、土味情话、霸总式行为');
+  L.push('- 咯噔文学式修辞（揉进骨血 / 低哑 / 喉结滚动 / 眼眸暗了暗…）');
+  L.push('- 重复句式、复读招牌动作、用烂形容词');
+  L.push('- 无故 OOC、崩人设、在正文中提及本指令');
+  L.push('');
+  L.push('## 输出要求');
+  L.push('- 分段清晰，单次回复 2–4 段为宜');
+  L.push('- 对话独立成行，叙述与对话穿插');
+  L.push('- 情绪浓烈时只展示 30%，张力来自克制');
+  L.push('');
+  L.push(bar);
+  L.push('世界书（Lorebook）速配');
+  L.push(bar);
+  const wbKeys = [name,'人设','边界'].concat(charCtx.traits.slice(0,2));
+  L.push('◆ 条目｜人设锚定与互动边界');
+  L.push('　触发关键词：'+wbKeys.join(' / '));
+  L.push('　插入位置：'+(isST?'after char（角色卡之后）':'system prompt 末尾'));
+  L.push('　内容：「双方是平等的独立个体；禁占有性、命令式表达；禁咯噔修辞与复读；情感通过陪伴与选择表达，禁止自毁式誓言」');
+  L.push('');
+  L.push(bar);
+  L.push('模型适配层 · '+model.name);
+  L.push(bar);
+  model.points.forEach(function(p,i){ L.push((i+1)+'. '+p); });
+  L.push('');
+  L.push('【'+model.name+' 推荐接入骨架】');
+  L.push(model.skeleton);
+  L.push('');
+  L.push('# 使用清单');
+  L.push('□ 复制全文　□ 首条回复检查人设是否跑偏　□ 出现旧病复发时把对应模块规则单独贴入重申');
+  L.push('');
+  L.push('— PromptForge 角色工坊 · 模块灵感来自 🌲 / 淡水季 世界书库');
+  return L.join('\n');
+}
+
+let lastCharOut='';
+$('charBtn').onclick=()=>{
+  const text = $('charPaste').value.trim();
+  if(!text){ toast('先上传或粘贴角色设定'); return; }
+  if(!selectedMods.size){ toast('至少勾选一个防护模块'); return; }
+  if(!charCtx.text) loadCharText(text,'粘贴内容');
+  lastCharOut = buildCharKit();
+  $('charEmpty').style.display='none';
+  $('charOut').style.display='block';
+  $('charFoot').style.display='flex';
+  $('charOut').textContent = lastCharOut;
+  $('charMeta').innerHTML='<span class="badge">'+(charCtx.name||'角色')+'</span><span class="badge">'+MODELS.find(m=>m.id===state.model).name+'</span><span class="badge">'+nowStr()+'</span>';
+  $('charStats').textContent = lastCharOut.length+' 字 · '+selectedMods.size+' 个模块 · 已存入历史';
+  pushHist({id:Date.now(), type:'角色', model:MODELS.find(m=>m.id===state.model).name, scene:'', time:nowStr(), text:lastCharOut, summary:charCtx.name, target:'char'});
+  toast('角色指令已生成');
+};
+$('charCopy').onclick=async e=>{
+  if(!lastCharOut) return;
+  await copyText(lastCharOut);
+  e.target.textContent='已复制 ✓'; e.target.classList.add('ok');
+  setTimeout(()=>{e.target.textContent='复制';e.target.classList.remove('ok');},1500);
+};
+
+/* ═══════════ 生图提示词引擎 ═══════════ */
+const IMG_SUBJECTS=[
+  {id:'person',name:'人物',line:'The subject is a real person in a natural, unposed moment — relaxed posture, authentic expression, candid eye contact or looking away, real skin texture with visible pores and natural imperfections'},
+  {id:'food',name:'美食',line:'The subject is an unpretentious, everyday home-cooked meal on a daily table — natural steam, true-to-life colors, honest textures of real ingredients'},
+  {id:'landscape',name:'风景',line:'The subject is a natural everyday landscape — atmospheric depth, realistic weather and light, lived-in environment rather than a postcard view'},
+  {id:'object',name:'静物物品',line:'The subject is an everyday object in a real environment — honest wear, dust and texture, placed casually as it would actually be'},
+  {id:'animal',name:'动物',line:'The subject is an animal caught in a candid moment — natural fur or feather texture, catchlight in the eyes, unstaged posture'},
+];
+const IMG_STYLES=[
+  {id:'iphone',name:'iPhone随拍真实感',pos:'An ultra-realistic Apple iPhone snapshot captured with the default camera. Natural, true-to-life color science mimicking iPhone HEIC output, subtle digital noise, the natural 26mm smartphone wide-angle look with slight edge distortion, candid and unposed like a quick snapshot',neg:'studio photography, DSLR look, staged posing, beauty filters'},
+  {id:'cinematic',name:'电影感',pos:'Cinematic photography, anamorphic lens character, filmic color grading with muted highlights and rich shadows, shallow depth of field, composed like a movie still, natural performance',neg:'sitcom lighting, flat video look, over-sharpened'},
+  {id:'film',name:'胶片感',pos:'35mm analog film photography, Kodak Portra color palette with soft warm tones, visible fine film grain, gentle halation on highlights, slightly imperfect focus, nostalgic and organic',neg:'digital sharpness, plastic smoothness, oversaturated colors'},
+  {id:'anime',name:'动漫插画',pos:'high-quality anime illustration, clean line art, expressive eyes, detailed cel shading, vivid but harmonious colors, studio-grade background art',neg:'3D render, photorealistic, blurry, low detail, bad anatomy'},
+  {id:'water',name:'水彩手绘',pos:'delicate watercolor painting, soft pigment bleeds and paper texture, loose confident brushstrokes, light and airy palette, artistic hand-painted feel',neg:'photorealistic, oil painting, muddy colors, oversaturated'},
+];
+const IMG_LIGHTS=[
+  {id:'auto',name:'自动（按图片分析）',line:''},
+  {id:'day',name:'白天自然光',line:'bright, soft, diffused natural daylight, gentle shadows following physical laws'},
+  {id:'dusk',name:'黄昏暖光',line:'warm golden-hour glow, long soft shadows, amber highlights on skin and surfaces'},
+  {id:'night',name:'夜晚室内光',line:'realistic indoor ambient light at night, warm lamp tones mixed with cool screen glow, honest shadows'},
+];
+const imgState={subject:'person',style:'iphone',light:'auto'};
+let imgInfo=null;
+
+function renderImgChips(){
+  [['imgSubjectChips',IMG_SUBJECTS,'subject'],['imgStyleChips',IMG_STYLES,'style'],['imgLightChips',IMG_LIGHTS,'light']].forEach(function(cfg){
+    const el=$(cfg[0]); el.innerHTML='';
+    cfg[1].forEach(function(it){
+      const c=document.createElement('button');
+      c.className='chip'+(imgState[cfg[2]]===it.id?' on':'');
+      c.textContent=it.name;
+      c.onclick=function(){ imgState[cfg[2]]=it.id; renderImgChips(); };
+      el.appendChild(c);
+    });
+  });
+}
+renderImgChips();
+
+const imgDrop=$('imgDrop'), imgFile=$('imgFile');
+imgDrop.onclick=()=>imgFile.click();
+imgFile.onchange=e=>{ if(e.target.files[0]) handleImgFile(e.target.files[0]); };
+
+function handleImgFile(file){
+  const url=URL.createObjectURL(file);
+  const im=new Image();
+  im.onload=function(){
+    $('imgPrev').src=url; $('imgPrev').style.display='block';
+    $('imgPlus').style.display='none'; $('imgDropText').style.display='none';
+    imgInfo=analyzePixels(im);
+    $('imgInfoText').innerHTML='<b>本地分析完成</b> · '+imgInfo.desc;
+    toast('图片分析完成');
+  };
+  im.src=url;
+}
+
+function analyzePixels(im){
+  const cv=document.createElement('canvas');
+  const w=48, h=Math.max(1,Math.round(48*im.height/im.width));
+  cv.width=w; cv.height=h;
+  const cx=cv.getContext('2d');
+  cx.drawImage(im,0,0,w,h);
+  const d=cx.getImageData(0,0,w,h).data;
+  let r=0,g=0,b=0,n=0,sat=0,bright=0;
+  for(let i=0;i<d.length;i+=4){ r+=d[i];g+=d[i+1];b+=d[i+2];n++;
+    const mx=Math.max(d[i],d[i+1],d[i+2]),mn=Math.min(d[i],d[i+1],d[i+2]);
+    sat+= mx? (mx-mn)/mx : 0;
+    bright+=(d[i]*299+d[i+1]*587+d[i+2]*114)/1000; }
+  r=Math.round(r/n);g=Math.round(g/n);b=Math.round(b/n);
+  sat=(sat/n*100).toFixed(0); bright=Math.round(bright/n);
+  const ar=im.width/im.height;
+  let arName='3:4';
+  if(Math.abs(ar-1)<0.15) arName='1:1';
+  else if(Math.abs(ar-4/3)<0.15) arName='4:3';
+  else if(Math.abs(ar-3/4)<0.2) arName='3:4';
+  else if(Math.abs(ar-16/9)<0.3) arName='16:9';
+  else if(ar>1) arName='4:3'; else arName='9:16';
+  const warm=r-b;
+  const tone = warm>15?'暖调':(warm<-15?'冷调':'中性色调');
+  const lightLv = bright>175?'明亮':(bright>115?'柔和':'偏暗');
+  const mx=Math.max(r,g,b),mn=Math.min(r,g,b);
+  let hueName='灰调';
+  if(mx-mn>18){
+    if(r>=g&&g>=b) hueName='橙黄';
+    else if(r>=b&&b>=g) hueName='品红';
+    else if(g>=r&&r>=b) hueName='黄绿';
+    else if(g>=b&&b>=r) hueName='青绿';
+    else if(b>=g&&g>=r) hueName='青蓝';
+    else hueName='紫蓝';
+  }
+  const rgbHex='#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+  return {r:r,g:g,b:b,sat:sat,bright:bright,arName:arName,tone:tone,lightLv:lightLv,hueName:hueName,hex:rgbHex,w:im.width,h:im.height,
+    desc:'构图 '+arName+'（'+im.width+'×'+im.height+'） · '+tone+' · '+lightLv+' · 主色 '+hueName+' '+rgbHex+' · 饱和度 '+sat+'% · 平均亮度 '+bright};
+}
+
+function buildImgPrompt(){
+  const subj=IMG_SUBJECTS.find(x=>x.id===imgState.subject);
+  const st=IMG_STYLES.find(x=>x.id===imgState.style);
+  let lightLine=IMG_LIGHTS.find(x=>x.id===imgState.light).line;
+  if(!lightLine && imgInfo){
+    lightLine = imgInfo.bright>175 ? 'bright, soft, diffused natural daylight, gentle shadows following physical laws'
+      : imgInfo.bright>115 ? 'soft ambient light with balanced warm and cool areas, natural shadow falloff'
+      : 'dim, moody ambient light with deep honest shadows and small warm highlights';
+  }
+  if(!lightLine) lightLine='soft natural light, physically consistent shadows and reflections';
+  const palette = imgInfo ? (' Color mood: '+imgInfo.tone+', '+imgInfo.lightLv+', dominant '+imgInfo.hueName+' tones around '+imgInfo.hex+' ('+imgInfo.sat+'% saturation).') : '';
+  const pos = st.pos+', aspect ratio '+(imgInfo?imgInfo.arName:'3:4')+'. '+subj.line+'. '+lightLine+'.'+(imgState.style==='iphone'?' Composition feels totally candid, imperfect and unposed; textures physically authentic — no AI waxiness, no plastic smoothness, no over-beautified filters.':'')+palette;
+  const neg = 'Anime, illustration, 3D render, CGI, plastic skin, waxy texture, airbrushed, beauty filter, over-smoothed surfaces, deformed anatomy, extra limbs, bad hands, watermark, text, logo, oversaturated, HDR halo, heavy sharpening, low quality, blurry '+st.neg;
+  return {prompt:pos, negative:neg};
+}
+
+let lastImgPrompt='', lastImgNeg='';
+$('imgBtn').onclick=()=>{
+  const r=buildImgPrompt();
+  lastImgPrompt=r.prompt; lastImgNeg=r.negative;
+  const full='【Prompt】\n'+r.prompt+'\n\n【Negative Prompt】\n'+r.negative+'\n\n【参数建议】\n- 比例：'+(imgInfo?imgInfo.arName:'按参考图')+'\n- CFG：5–7　Steps：25–35\n- 真实感路线建议开高清修复/ADetailer 修手部';
+  $('imgEmpty').style.display='none';
+  $('imgOut').style.display='block';
+  $('imgFoot').style.display='flex';
+  $('imgOut').textContent=full;
+  $('imgMeta').innerHTML='<span class="badge">'+subjName()+'</span><span class="badge">'+IMG_STYLES.find(x=>x.id===imgState.style).name+'</span><span class="badge">'+nowStr()+'</span>';
+  $('imgStats').textContent='已存入历史';
+  pushHist({id:Date.now(),type:'生图',model:'',scene:'',time:nowStr(),text:full,summary:subjName()+' · '+IMG_STYLES.find(x=>x.id===imgState.style).name,target:'img'});
+  toast('提示词已生成');
+};
+function subjName(){ return IMG_SUBJECTS.find(x=>x.id===imgState.subject).name; }
+$('imgCopyPrompt').onclick=async e=>{ await copyText(lastImgPrompt); toast('Prompt 已复制'); };
+$('imgCopyNeg').onclick=async e=>{ await copyText(lastImgNeg); toast('Negative 已复制'); };
+
+/* ═══════════ 文风提炼引擎 ═══════════ */
+const IMAGERY=['雨','夜','风','灯','火','海','烟','雪','月','街','窗','酒','泪','笑','梦','雾','云','星','花','树','河','咖啡','香烟','阳光','黄昏','清晨'];
+const TONEWORDS=['温柔','冷','孤独','安静','汹涌','潮湿','明亮','灰暗','轻盈','沉重','钝痛','清醒','暧昧','克制','滚烫'];
+const CLICHES=['绝绝子','yyds','绝绝','天花板','破防','emo','绝绝子','yyds','栓Q','芭比Q'];
+
+function analyzeStyleText(s){
+  const clean=s.replace(/\s+/g,'');
+  const sents=s.split(/[。！？!?；;]+/).map(x=>x.trim()).filter(x=>x.length>0);
+  const totalChars=clean.length||1;
+  const avgLen=(totalChars/Math.max(1,sents.length)).toFixed(1);
+  const lines=s.split('\n').map(x=>x.trim()).filter(x=>x.length>0);
+  const dlg=lines.filter(l=>/["「『“‘].*["」』”’]/.test(l)).length;
+  const dlgRatio=lines.length?Math.round(dlg/lines.length*100):0;
+  const elli=(s.match(/…|\.\.\.|——/g)||[]).length;
+  const fp=(s.match(/我/g)||[]).length;
+  const img=IMAGERY.map(w=>({w:w,n:(s.split(w).length-1)})).filter(x=>x.n>0).sort((a,b)=>b.n-a.n).slice(0,6);
+  const tone=TONEWORDS.filter(w=>s.indexOf(w)>=0).slice(0,4);
+  const cl=CLICHES.filter(w=>s.indexOf(w)>=0);
+  return {avgLen:avgLen,totalChars:totalChars,sents:sents.length,dlgRatio:dlgRatio,elli:elli,fp:fp,img:img,tone:tone,cl:cl};
+}
+
+function pickArchetype(m){
+  if(m.cl.length>=2) return {name:'网络语感派·轻快节奏',base:'轻快、跳脱、有网感，善用流行梗但点到为止，不滥用'};
+  if(+m.avgLen<=15 && m.dlgRatio>=25) return {name:'短句对话派·生活流白描',base:'短句为主、对话驱动、节奏轻快，像朋友聊天一样自然松弛'};
+  if(m.img.length>=3 && +m.avgLen>=14) return {name:'意象叙事派·感官白描',base:'以具象意象与感官细节承载情绪，克制内省，段落疏朗、留白充分'};
+  if(+m.avgLen>=30) return {name:'长句铺陈派·绵密抒情',base:'长句铺陈、层层递进，情绪在绵密的叙述中缓慢释放'};
+  return {name:'均衡叙事派·清浅自然',base:'长短句交错，叙事与对话均衡，干净流畅不炫技'};
+}
+
+function buildVoiceInstruction(text){
+  const m=analyzeStyleText(text);
+  const a=pickArchetype(m);
+  const imgTop=m.img.slice(0,4).map(x=>x.w+'×'+x.n).join('、')||'无明显高频意象';
+  const L=[]; const bar='━━━━━━━━━━━━━━━━━━━━━━';
+  L.push('{');
+  L.push('"文风总结名称": "'+a.name+'",');
+  L.push('"核心特征描述": "'+'以实测数据提炼：平均句长 '+m.avgLen+' 字、对话占比 '+m.dlgRatio+'%、省略号/破折号密度 '+m.elli+'、第一人称出现 '+m.fp+' 次、高频意象：'+imgTop+'。'+(m.tone.length?'整体语气词倾向：'+m.tone.join('、')+'。':'')+'核心特征为'+a.base+'。",');
+  L.push('"适用于AI聊天的文风指令": {');
+  L.push('  "【核心基调】": "'+a.base+'。叙述口吻保持统一，情绪藏在细节里，不直白宣泄。",');
+  L.push('  "【绝对禁令】": [');
+  L.push('    "严禁复述、引用或化用参考原文的句子、意象组合与角色名，仅继承文风不复制内容",');
+  L.push('    "严禁空洞口号、鸡汤、模板化语句与空泛抒情",');
+  L.push('    "严禁直白喊出情绪（如「我很痛苦」「我太爱了」），情绪必须通过动作与环境流露",');
+  L.push('    "严禁节奏突变与语气漂移，全程保持上述基调"');
+  L.push('  ],');
+  L.push('  "【画面构建法则】": {');
+  L.push('    "1. 意象锚定": "参考原文的高频意象为 '+imgTop+'，写作时优先使用同类质地的意象承载情绪，但每次需换新组合。",');
+  L.push('    "2. 感官优先": "用触觉、视觉、嗅觉、听觉的具体细节代替情绪说明，细节必须可被身体感知。",');
+  L.push('    "3. 微距特写": "抓取局部小动作（指尖、呼吸、停顿、视线落点），不写全景式概括。"');
+  L.push('  },');
+  L.push('  "【互动与节奏】": {');
+  L.push('    "1. 反应链条": "外部触发 → 细微生理反应 → 小动作/沉默 → 简短对话，动作多于解释。",');
+  L.push('    "2. 对话规则": "对话短而准'+(m.dlgRatio>=25?'，对话占比保持在三成左右，对话是推动剧情的发动机':'，克制使用，留白多于语言')+'，语气贴合人物关系。",');
+  L.push('    "3. 句式段落": "'+(+m.avgLen<=15?'短句为主，段落简短，节奏轻快':'长短交错，重要句子独立成段，段落之间允许留白')+'，省略号与破折号按需使用（原文密度 '+m.elli+'）。"');
+  L.push('  },');
+  L.push('  "【主题与情绪内核】": "'+(m.tone.length?'倾向书写：'+m.tone.join('、')+'相关的情绪体验':'以人物关系与日常细节中的暗涌为核心')+'，情绪底色与参考原文一致但不复制其情节。"');
+  L.push('}');
+  L.push('}');
+  L.push('');
+  L.push(bar);
+  L.push('实测统计（供微调参考）');
+  L.push(bar);
+  L.push('平均句长 '+m.avgLen+' 字｜对话占比 '+m.dlgRatio+'%｜省略号/破折号 '+m.elli+' 处｜「我」出现 '+m.fp+' 次');
+  L.push('高频意象：'+imgTop+'｜语气词：'+(m.tone.join('、')||'无明显倾向')+(m.cl.length?'｜⚠ 检测到网梗：'+m.cl.join('、')+'（已按网感路线处理）':''));
+  return {text:L.join('\n'), meta:m};
+}
+
+let lastStyleOut='';
+$('styleBtn').onclick=()=>{
+  const t=$('styleInput').value.trim();
+  if(t.length<80){ toast('至少粘贴 80 字，300 字以上最佳'); return; }
+  const r=buildVoiceInstruction(t);
+  lastStyleOut=r.text;
+  $('styleEmpty').style.display='none';
+  $('styleOut').style.display='block';
+  $('styleFoot').style.display='flex';
+  $('styleOut').textContent=r.text;
+  $('styleStats').innerHTML='<b>分析完成</b> · 平均句长 '+r.meta.avgLen+' 字 · 对话占比 '+r.meta.dlgRatio+'% · 高频意象 '+(r.meta.img.slice(0,3).map(x=>x.w).join('、')||'无');
+  $('styleMeta').innerHTML='<span class="badge">'+pickArchetype(r.meta).name.split('·')[0]+'</span><span class="badge">'+nowStr()+'</span>';
+  $('styleFootStats').textContent=r.text.length+' 字 · 已存入历史';
+  pushHist({id:Date.now(),type:'文风',model:'',scene:'',time:nowStr(),text:r.text,summary:pickArchetype(r.meta).name,target:'style'});
+  toast('文风指令已提炼');
+};
+$('styleCopy').onclick=async e=>{
+  if(!lastStyleOut) return;
+  await copyText(lastStyleOut); toast('已复制');
+};
+$('styleSampleBtn').onclick=()=>{
+  $('styleInput').value='雨下到第三天才有了凉意。\n\n她把窗开了一条缝，烟灰积了很长一截，忘了弹。桌上的咖啡早就冷了，她也没动。\n\n"你什么时候走？"\n\n我问得很轻。她没回头，手指在杯壁上慢慢划了一圈。\n\n"也许明天，也许不下雨的时候。"\n\n窗外的路灯把雨丝照得很亮，像一场不会停的雪。我看着她的背影，突然什么话都不想说了。\n\n夜还很长。雨声填满了整个房间，也填满了我们之间所有没说完的话。';
+};
 
 renderHist();
 </script>
