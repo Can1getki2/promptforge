@@ -3,1450 +3,1525 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PromptForge · 世界书 / 指令生成器</title>
+<title>口袋电话 · 档案馆 v8</title>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
 <style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  :root{
-    --bg:#f7f7f5; --card:#ffffff; --ink:#131313; --sub:#757572; --faint:#a8a8a4;
-    --line:#e5e4e1; --soft:#efeeec;
-    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  }
-  html{scroll-behavior:smooth}
-  body{
-    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;
-    background:var(--bg);color:var(--ink);line-height:1.75;-webkit-font-smoothing:antialiased;
-  }
-  .wrap{max-width:940px;margin:0 auto;padding:0 24px}
+:root{
+  --paper:#FFFFFF;
+  --card:rgba(0,0,0,.045);
+  --ink:#1A1A18;
+  --ink2:#8C8A82;
+  --ink3:#C6C4BB;
+  --line:rgba(0,0,0,.08);
+  --line2:rgba(0,0,0,.14);
+  --red:#B0452F;
+  --serif:"Songti SC","STSong","STZhongsong","SimSun",serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased;}
+html,body{background:var(--paper);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue","Segoe UI",sans-serif;}
+::selection{background:#DBD9CF;}
+button{font-family:inherit;cursor:pointer;border:none;background:none;}
+input,textarea{font-family:inherit;color:var(--ink);}
 
-  /* ── Top bar ── */
-  .topbar{display:flex;align-items:center;justify-content:space-between;padding:24px 0;position:sticky;top:0;background:rgba(247,247,245,.92);backdrop-filter:blur(10px);z-index:50;border-bottom:1px solid var(--line)}
-  .brand{display:flex;align-items:center;gap:11px}
-  .brand .mark{width:15px;height:15px;background:var(--ink);transform:rotate(45deg)}
-  .brand .name{font-size:13px;letter-spacing:.3em;font-weight:700}
-  .brand .name span{color:var(--faint);font-weight:400}
-  .tabs{display:flex;gap:4px;background:var(--soft);border-radius:999px;padding:4px}
-  .tab{border:none;background:transparent;border-radius:999px;padding:7px 18px;font-size:13px;color:var(--sub);cursor:pointer;transition:all .18s ease;font-family:inherit;white-space:nowrap}
-  .tab:hover{color:var(--ink)}
-  .tab.on{background:var(--ink);color:#fff}
+.page{max-width:1120px;margin:0 auto;padding:0 26px 90px;}
 
-  /* ── Hero ── */
-  .hero{padding:64px 0 8px}
-  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.32em;color:var(--faint);margin-bottom:16px}
-  .hero h1{font-size:clamp(30px,5.4vw,52px);font-weight:800;letter-spacing:-.03em;line-height:1.15}
-  .hero h1 em{font-style:normal;color:var(--faint)}
-  .hero p{margin-top:14px;color:var(--sub);font-size:14.5px;max-width:600px}
+/* ===== 页眉 ===== */
+.topbar{display:flex;align-items:baseline;gap:16px;padding:30px 0 0;border-bottom:1px solid var(--line2);padding-bottom:22px;}
+.topbar .tb-name{font-family:var(--serif);font-size:24px;font-weight:700;letter-spacing:8px;}
+.topbar .tb-en{font-size:10px;letter-spacing:4px;color:var(--ink2);text-transform:uppercase;}
+.topbar .tb-right{margin-left:auto;}
 
-  .panel{display:none;padding-bottom:90px}
-  .panel.active{display:block;animation:fadeUp .4s ease}
-  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+/* ===== 展览式标题区 ===== */
+.hero{padding:52px 0 40px;position:relative;}
+.hero .vertical{position:absolute;right:0;top:52px;writing-mode:vertical-rl;font-size:11px;letter-spacing:8px;color:var(--ink3);font-family:var(--serif);}
+.hero-kicker{font-size:10px;letter-spacing:6px;color:var(--ink2);text-transform:uppercase;display:flex;align-items:center;gap:14px;font-weight:600;}
+.hero-kicker::after{content:"";flex:1;height:1px;background:var(--line2);}
+.hero h1{font-family:var(--serif);font-size:clamp(30px,4.4vw,44px);font-weight:700;letter-spacing:4px;line-height:1.5;margin-top:22px;}
+.hero h1 em{font-style:normal;border-bottom:3px solid var(--ink);padding-bottom:2px;}
+.hero p{margin-top:18px;font-size:12.5px;color:var(--ink2);line-height:2.2;letter-spacing:1.5px;max-width:560px;}
 
-  /* ── Steps ── */
-  .step{margin-top:44px;padding-top:28px;border-top:1px solid var(--line)}
-  .step:first-of-type{border-top:none}
-  .step-head{display:flex;align-items:baseline;gap:14px;margin-bottom:16px}
-  .step-no{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.12em}
-  .step-title{font-size:15px;font-weight:700;letter-spacing:.02em}
-  .step-note{font-size:12.5px;color:var(--sub);margin-top:10px}
-  .step-note b{color:var(--ink);font-weight:600}
+/* ===== 录入卡 ===== */
+.card{background:var(--card);border:1px solid var(--line2);padding:38px 40px 34px;}
+@media (max-width:820px){.card{padding:26px 20px;}}
+.card-kicker{font-size:9.5px;letter-spacing:5px;color:var(--ink3);text-transform:uppercase;font-weight:600;}
+.card-title{font-family:var(--serif);font-size:24px;font-weight:700;letter-spacing:6px;margin-top:10px;}
+.card-rule{display:flex;align-items:center;gap:12px;margin-top:16px;}
+.card-rule::before,.card-rule::after{content:"";flex:1;height:1px;background:var(--line2);}
+.card-rule span{font-size:9px;letter-spacing:3px;color:var(--ink3);}
 
-  .chips{display:flex;flex-wrap:wrap;gap:8px}
-  .chip{
-    border:1px solid var(--line);background:var(--card);border-radius:999px;
-    padding:8px 18px;font-size:13px;color:var(--ink);cursor:pointer;
-    transition:background-color .16s ease,color .16s ease,border-color .16s ease;font-family:inherit;
-  }
-  .chip:hover{border-color:var(--ink)}
-  .chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.step{padding:26px 0 4px;border-top:1px dashed var(--line2);}
+.step:first-of-type{border-top:none;}
+.step-head{display:flex;align-items:baseline;gap:14px;}
+.step-no{font-family:var(--serif);font-size:22px;font-weight:700;color:var(--ink3);}
+.step-name{font-family:var(--serif);font-size:17px;font-weight:700;letter-spacing:4px;}
+.step-en{font-size:9px;letter-spacing:3.5px;color:var(--ink3);text-transform:uppercase;font-weight:600;}
+.step-hint{font-size:10px;color:var(--red);letter-spacing:2px;margin-left:auto;font-weight:700;}
+.step-desc{font-size:11.5px;color:var(--ink2);margin:10px 0 14px;line-height:2;letter-spacing:.5px;}
 
-  textarea{
-    width:100%;min-height:120px;border:1px solid var(--line);border-radius:14px;
-    padding:16px 18px;font:inherit;font-size:14px;resize:vertical;background:var(--card);
-    transition:border-color .15s ease,box-shadow .15s ease;
-  }
-  textarea:focus{outline:none;border-color:var(--ink);box-shadow:0 0 0 3px rgba(19,19,19,.06)}
-  .hint{display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--faint)}
-  .hint a{color:var(--ink);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.drop{border:1px dashed var(--line2);padding:15px 14px;text-align:center;font-size:11.5px;color:var(--ink2);
+  cursor:pointer;transition:all .2s;background:var(--paper);line-height:1.9;letter-spacing:.5px;}
+.drop:hover,.drop.over{border-color:var(--ink);color:var(--ink);background:#F4F4F3;}
+.drop b{color:var(--ink);font-weight:700;}
+.drop .drop-file{font-size:10px;color:var(--red);margin-top:5px;display:none;word-break:break-all;letter-spacing:1px;}
+textarea{width:100%;resize:vertical;border:1px solid var(--line);padding:12px 13px;font-size:12.5px;
+  line-height:2;background:var(--paper);outline:none;transition:border-color .2s;letter-spacing:.5px;}
+textarea::placeholder{color:var(--ink3);}
+textarea:focus{border-color:var(--ink);}
+#profile{min-height:90px;margin-top:10px;}
+#userProfile{min-height:56px;margin-top:10px;}
 
-  .actions{display:flex;gap:10px;margin-top:30px;flex-wrap:wrap;align-items:center}
-  .btn{
-    background:var(--ink);color:#fff;border:1px solid var(--ink);border-radius:999px;
-    padding:13px 30px;font-size:14px;cursor:pointer;transition:opacity .15s ease;font-family:inherit;
-  }
-  .btn:hover{opacity:.82}
-  .btn.ghost{background:transparent;color:var(--ink)}
-  .mini{font-size:12px;color:var(--faint)}
+.img-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:10px;}
+@media (max-width:820px){.img-grid{grid-template-columns:repeat(4,1fr);}}
+.img-cell{position:relative;aspect-ratio:1;overflow:hidden;border:1px solid var(--line2);background:var(--paper);}
+.img-cell img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(.4);}
+.img-cell .img-del{position:absolute;top:3px;right:3px;width:17px;height:17px;background:var(--ink);color:#fff;font-size:10px;line-height:17px;text-align:center;cursor:pointer;}
+.img-cell .img-del:hover{background:var(--red);}
 
-  /* ── Output ── */
-  .out{margin-top:36px}
-  .out-bar{
-    background:var(--ink);color:#fff;border-radius:14px 14px 0 0;
-    display:flex;align-items:center;justify-content:space-between;gap:10px;
-    padding:12px 20px;flex-wrap:wrap;
-  }
-  .out-label{font-family:var(--mono);font-size:11px;letter-spacing:.22em;color:#fff}
-  .out-meta{display:flex;gap:6px;flex-wrap:wrap}
-  .badge{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;border:1px solid #4a4a48;color:#d8d8d5;border-radius:999px;padding:3px 11px}
-  .out-body{
-    background:var(--card);border:1px solid var(--line);border-top:none;border-radius:0 0 14px 14px;
-  }
-  .out-body pre{
-    padding:24px 26px;white-space:pre-wrap;word-break:break-word;
-    font-family:var(--mono);font-size:12.8px;line-height:1.9;
-    max-height:600px;overflow:auto;
-  }
-  .out-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 20px;border-top:1px solid var(--line);flex-wrap:wrap}
-  .copy-btn{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 18px;font-size:12.5px;cursor:pointer;font-family:inherit;transition:all .15s ease}
-  .copy-btn:hover{border-color:var(--ink)}
-  .copy-btn.ok{background:var(--ink);color:#fff;border-color:var(--ink)}
-  .empty{border:1px dashed var(--line);border-radius:14px;padding:52px 24px;text-align:center;color:var(--faint);font-size:13.5px}
+.gen-row{display:flex;gap:14px;align-items:center;margin-top:32px;padding-top:26px;border-top:1px solid var(--line2);flex-wrap:wrap;}
+.btn{padding:14px 40px;font-size:12.5px;font-weight:700;letter-spacing:6px;transition:all .2s;font-family:var(--serif);}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:var(--ink);color:var(--paper);}
+.btn-primary:hover{background:#000;box-shadow:0 8px 22px rgba(26,26,24,.22);}
+.btn-ghost{background:transparent;color:var(--ink2);border:1px solid var(--line2);padding:14px 22px;letter-spacing:3px;}
+.btn-ghost:hover{color:var(--ink);border-color:var(--ink);}
+.btn[disabled]{opacity:.4;cursor:default;}
+.status{font-size:11.5px;color:var(--ink2);line-height:1.9;flex:1;min-width:180px;letter-spacing:.5px;}
+.status.err{color:var(--red);}
+.status .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red);margin-right:7px;animation:blink 1s infinite;}
+@keyframes blink{50%{opacity:.2;}}
+.export-row{display:flex;gap:9px;}
+.mini-btn{padding:8px 14px;font-size:10px;border:1px solid var(--line2);color:var(--ink2);transition:all .2s;background:transparent;font-weight:600;letter-spacing:2px;}
+.mini-btn:hover{border-color:var(--ink);color:var(--ink);}
 
-  /* ── Diagnosis ── */
-  .up-row{display:flex;gap:14px;align-items:stretch;flex-wrap:wrap}
-  .up-row textarea{flex:1;min-width:260px}
-  .drop{
-    width:150px;min-height:120px;border:1px dashed var(--line);border-radius:14px;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
-    gap:6px;cursor:pointer;color:var(--sub);font-size:12.5px;text-align:center;
-    padding:10px;transition:border-color .15s ease;background:var(--card);
-  }
-  .drop:hover{border-color:var(--ink)}
-  .drop .plus{font-size:22px;line-height:1;color:var(--ink)}
-  .drop img{max-width:100%;max-height:110px;border-radius:8px}
-  #ocrStatus{font-size:12px;color:var(--sub);margin-top:10px;font-family:var(--mono);min-height:18px}
+details{margin-top:24px;}
+summary{font-size:11px;color:var(--ink2);cursor:pointer;user-select:none;list-style:none;letter-spacing:3px;font-weight:600;font-family:var(--serif);}
+summary::before{content:"+";display:inline-block;width:15px;font-weight:700;transition:transform .2s;color:var(--ink3);}
+details[open] summary::before{transform:rotate(45deg);color:var(--red);}
+.api-grid{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:14px;margin-top:16px;}
+@media (max-width:820px){.api-grid{grid-template-columns:1fr;}}
+.field label{font-size:9.5px;color:var(--ink3);display:block;margin-bottom:6px;letter-spacing:2px;text-transform:uppercase;font-weight:600;}
+.field input{width:100%;border:1px solid var(--line);padding:10px 12px;font-size:12px;background:var(--paper);outline:none;transition:border-color .2s;}
+.field input:focus{border-color:var(--ink);}
+.model-wrap{position:relative;}
+.model-drop{display:none;position:absolute;left:0;right:0;top:calc(100% + 5px);background:#fff;border:1px solid var(--line2);
+  max-height:200px;overflow-y:auto;z-index:99;box-shadow:0 14px 34px rgba(26,26,24,.12);}
+.model-drop .md-item{padding:10px 12px;font-size:11px;cursor:pointer;border-bottom:1px solid #F0EEE9;word-break:break-all;color:var(--ink2);}
+.model-drop .md-item:last-child{border-bottom:none;}
+.model-drop .md-item:hover{background:var(--ink);color:var(--paper);}
 
-  .diag-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 24px;margin-top:14px}
-  .diag-head{display:flex;align-items:center;gap:10px}
-  .sev{width:9px;height:9px;border-radius:50%;flex:none}
-  .sev.high{background:var(--ink)}
-  .sev.mid{background:#9a9a96}
-  .sev.low{background:#cfcecb}
-  .diag-title{font-weight:700;font-size:14.5px}
-  .diag-cause{margin-top:8px;font-size:13.5px;color:var(--sub)}
-  .diag-fixes{margin-top:12px;list-style:none;counter-reset:fix}
-  .diag-fixes li{counter-increment:fix;position:relative;padding-left:30px;font-size:13.5px;margin-top:8px}
-  .diag-fixes li::before{
-    content:counter(fix);position:absolute;left:0;top:2px;
-    font-family:var(--mono);font-size:11px;color:var(--sub);
-    border:1px solid var(--line);border-radius:50%;width:18px;height:18px;
-    display:flex;align-items:center;justify-content:center;
-  }
-  .conf{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--faint);flex:none}
+/* ===== 屏幕 ===== */
+.stage{margin-top:34px;}
+.stage-head{display:flex;align-items:baseline;gap:16px;margin-bottom:16px;}
+.stage-title{font-family:var(--serif);font-size:22px;font-weight:700;letter-spacing:6px;}
+.stage-en{font-size:9px;letter-spacing:4px;color:var(--ink3);text-transform:uppercase;font-weight:600;}
+.stage-desc{font-size:10.5px;color:var(--ink2);letter-spacing:2px;margin-left:auto;}
 
-  /* ── History ── */
-  .hist-tools{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:28px;flex-wrap:wrap}
-  .hist-item{
-    background:var(--card);border:1px solid var(--line);border-radius:14px;
-    padding:18px 22px;margin-top:14px;display:flex;gap:16px;align-items:flex-start;
-  }
-  .hist-sq{width:38px;height:38px;background:var(--ink);color:#fff;border-radius:10px;flex:none;
-    display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;letter-spacing:.05em}
-  .hist-sq.diag-sq{background:transparent;color:var(--ink);border:1px solid var(--ink)}
-  .hist-main{flex:1;min-width:0}
-  .hist-title{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .hist-meta{font-size:12px;color:var(--faint);margin-top:3px;font-family:var(--mono)}
-  .hist-acts{display:flex;gap:6px;flex:none}
-  .hbtn{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 13px;font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s ease}
-  .hbtn:hover{border-color:var(--ink)}
-  .hbtn.danger:hover{background:var(--ink);color:#fff}
+.window{background:var(--paper);border:1px solid var(--line2);overflow:hidden;
+  display:flex;flex-direction:column;width:min(430px,100%);height:min(860px,145vw);min-height:560px;margin:0 auto;
+  box-shadow:0 10px 30px rgba(26,26,24,.045);}
+.sb{height:40px;flex-shrink:0;display:flex;justify-content:space-between;align-items:center;padding:0 22px;
+  font-size:12px;font-weight:700;background:var(--paper);border-bottom:1px solid var(--line2);font-variant-numeric:tabular-nums;}
+.viewport{flex:1;overflow-y:auto;position:relative;scrollbar-width:none;background:var(--paper);}
+.viewport::-webkit-scrollbar{display:none;}
 
-  /* ── Toast ── */
-  .toast{
-    position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(80px);
-    background:var(--ink);color:#fff;font-size:13px;border-radius:999px;padding:11px 24px;
-    opacity:0;transition:all .3s cubic-bezier(.2,.9,.3,1.2);pointer-events:none;z-index:99;
-  }
-  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* 底部全局导航 */
+.navbar{height:46px;flex-shrink:0;display:flex;align-items:center;background:var(--paper);border-top:1px solid var(--line2);}
+.nav-btn{font-size:11px;letter-spacing:3px;color:var(--ink2);cursor:pointer;padding:12px 18px;transition:color .15s;font-weight:600;}
+.nav-btn:hover{color:var(--ink);}
+.nav-btn.big{font-family:var(--serif);font-size:13px;color:var(--ink);font-weight:700;}
+.nav-sep{width:1px;height:14px;background:var(--line2);}
+.nav-fill{flex:1;}
 
-  footer{border-top:1px solid var(--line);padding:26px 0 44px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--faint)}
-  @media (max-width:600px){
-    .topbar{flex-direction:column;gap:14px;align-items:flex-start}
-    .hero{padding:44px 0 4px}
-    .hist-item{flex-direction:column}
-  }
+/* ---------- 馆内通用 ---------- */
+.pg{padding:26px 26px 40px;}
+.pg-kicker{font-size:9px;letter-spacing:5px;color:var(--ink3);text-transform:uppercase;font-weight:600;display:flex;justify-content:space-between;}
+.pg-title{font-family:var(--serif);font-size:30px;font-weight:700;letter-spacing:6px;margin-top:12px;}
+.pg-rule{height:1px;background:var(--line2);margin:20px 0 22px;position:relative;}
+.pg-rule::after{content:"";position:absolute;right:0;top:-2px;width:5px;height:5px;background:var(--red);border-radius:50%;}
+
+/* 目录（桌面） */
+.cat-head{padding:26px 26px 8px;}
+.cat-name{font-family:var(--serif);font-size:34px;font-weight:700;letter-spacing:8px;}
+.cat-tag{font-size:10px;letter-spacing:4px;color:var(--ink2);margin-top:10px;}
+.cat-tag b{color:var(--red);font-weight:700;}
+.cat-quote{margin:20px 26px 0;padding:16px 0;border-top:1px dashed var(--line2);border-bottom:1px dashed var(--line2);
+  font-family:var(--serif);font-size:12.5px;line-height:2.2;color:var(--ink2);letter-spacing:2px;text-align:center;}
+.cat-list{margin:20px 26px 30px;border-top:1px solid var(--line2);}
+.cat-row{display:flex;align-items:baseline;gap:14px;padding:15px 2px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .15s;}
+.cat-row:hover{background:rgba(0,0,0,.06);}
+.cat-no{font-family:var(--serif);font-size:13px;color:var(--ink3);width:26px;}
+.cat-name2{font-family:var(--serif);font-size:16.5px;font-weight:700;letter-spacing:3px;}
+.cat-en{font-size:8.5px;letter-spacing:3px;color:var(--ink3);text-transform:uppercase;font-weight:600;}
+.cat-arrow{margin-left:auto;color:var(--ink3);font-size:14px;transition:transform .2s;}
+.cat-row:hover .cat-arrow{transform:translateX(3px);color:var(--ink);}
+.cat-foot{padding:0 26px 26px;text-align:center;font-size:8.5px;letter-spacing:4px;color:var(--ink3);text-transform:uppercase;line-height:2.4;}
+
+/* 列表行（会话/通话/搜索等） */
+.rows{border-top:1px solid var(--line2);}
+.row{display:flex;gap:13px;padding:15px 2px;border-bottom:1px solid var(--line);align-items:flex-start;cursor:pointer;transition:background .15s;position:relative;}
+.row:hover{background:rgba(0,0,0,.08);}
+.row-sq{width:40px;height:40px;border:1px solid var(--line2);flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--serif);font-size:15px;font-weight:700;background:var(--card);}
+.row-main{flex:1;min-width:0;}
+.row-top{display:flex;align-items:baseline;gap:9px;}
+.row-name{font-family:var(--serif);font-size:15.5px;font-weight:700;letter-spacing:1px;}
+.row-name.missed{color:var(--red);}
+.stamp{display:inline-block;font-size:8.5px;font-weight:700;letter-spacing:2px;border:1px solid var(--ink);color:var(--ink);padding:1.5px 6px;vertical-align:2px;}
+.stamp.red{border-color:var(--red);color:var(--red);transform:rotate(-2deg);}
+.row-time{margin-left:auto;font-size:10.5px;color:var(--ink2);flex-shrink:0;font-variant-numeric:tabular-nums;letter-spacing:1px;}
+.row-sub{font-size:12px;color:var(--ink2);margin-top:5px;line-height:1.8;letter-spacing:.5px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.row-sub.wrap{white-space:normal;}
+.unread-dot{min-width:16px;height:16px;background:var(--red);color:#fff;font-size:9.5px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;font-variant-numeric:tabular-nums;flex-shrink:0;margin-top:3px;}
+
+/* 群聊 */
+.msg-body{width:fit-content;max-width:74%;min-width:0;}
+.msg-body>.bubble{max-width:100%;}
+.msg-who{font-size:9px;color:var(--ink3);letter-spacing:1px;margin-bottom:3px;font-weight:600;}
+.row-sq.group{font-size:12px;color:var(--ink2);}
+/* 聊天 */
+.chat-head2{padding:22px 26px 16px;border-bottom:1px solid var(--line2);}
+.chat-who{font-family:var(--serif);font-size:22px;font-weight:700;letter-spacing:5px;text-align:center;}
+.chat-en{text-align:center;font-size:8.5px;letter-spacing:4px;color:var(--ink3);text-transform:uppercase;margin-top:8px;font-weight:600;}
+.chat-body{padding:14px 16px 8px;}
+.time-divider{text-align:center;font-size:9.5px;letter-spacing:3px;color:var(--ink3);margin:14px 0 6px;font-variant-numeric:tabular-nums;}
+.msg-row{display:flex;margin:8px 0;gap:8px;align-items:flex-start;}
+.msg-row.me{flex-direction:row-reverse;}
+.msg-av{width:24px;height:24px;flex-shrink:0;border:1px solid var(--line2);background:var(--card);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:10.5px;font-weight:700;}
+.msg-av.me{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+.bubble{max-width:74%;padding:7px 11px;font-size:12.5px;line-height:1.8;border-radius:2px;letter-spacing:.5px;word-break:break-word;}
+.bubble.them{background:var(--card);border:1px solid var(--line2);}
+.bubble.me{background:var(--ink);color:var(--paper);}
+.voice{display:flex;align-items:center;gap:10px;}
+.vwave{display:flex;align-items:flex-end;gap:1.5px;height:12px;}
+.vwave i{width:2px;background:currentColor;opacity:.8;}
+.vdur{font-size:11.5px;opacity:.65;font-variant-numeric:tabular-nums;letter-spacing:1px;}
+.vt-btn{margin-left:auto;font-size:9.5px;color:var(--ink2);border:1px solid var(--line2);padding:2px 7px;cursor:pointer;background:var(--card);letter-spacing:2px;font-weight:600;}
+.vt-btn:hover{color:var(--ink);border-color:var(--ink);}
+.v-text{display:none;margin-top:9px;padding-top:9px;border-top:1px dashed var(--line2);font-size:12.5px;line-height:1.9;color:#565450;}
+/* 转账票根 */
+.ticket{background:var(--card);border:1px solid var(--line2);padding:8px 11px;min-width:130px;position:relative;}
+.ticket::before{content:"";position:absolute;left:0;right:0;top:-1px;border-top:2px dashed var(--line2);}
+.tk-top{display:flex;align-items:center;gap:9px;}
+.tk-check{width:24px;height:24px;border:1px solid var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.tk-amt{font-family:var(--serif);font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;}
+.tk-status{font-size:9.5px;color:var(--ink2);margin-top:3px;letter-spacing:2px;}
+.tk-brand{display:flex;justify-content:space-between;font-size:7.5px;color:var(--ink3);letter-spacing:2.5px;margin-top:8px;border-top:1px dashed var(--line2);padding-top:6px;font-weight:600;}
+/* 双语：原文 + 虚线 + 翻译，点击展开/折叠 */
+.biline{cursor:pointer;}
+.bl-raw::after{content:" \25BE";color:var(--ink3);font-size:.85em;margin-left:3px;}
+.biline.open .bl-raw::after{content:" \25B4";}
+.bl-tr{display:none;color:#565450;}
+.biline.open .bl-tr{display:block;}
+.bl-dash{display:block;border-top:1px dashed var(--line2);margin:7px 0 6px;}
+.chat-inputbar{margin:8px 18px 6px;border:1px solid var(--line2);background:var(--card);padding:11px 15px;display:flex;align-items:center;gap:10px;color:var(--ink3);font-size:12px;letter-spacing:2px;}
+.chat-inputbar .send{margin-left:auto;width:26px;height:26px;border:1px solid var(--line2);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ink2);}
+
+/* 手记 */
+.note-row{display:flex;gap:16px;padding:17px 2px;border-bottom:1px solid var(--line);cursor:pointer;align-items:flex-start;transition:background .15s;}
+.note-row:hover{background:rgba(0,0,0,.08);}
+.note-date{width:52px;flex-shrink:0;text-align:center;border-right:1px solid var(--line2);padding-right:14px;}
+.note-day{font-family:var(--serif);font-size:26px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;}
+.note-mon{font-size:9px;color:var(--ink2);margin-top:5px;letter-spacing:2px;font-weight:600;}
+.note-main{flex:1;min-width:0;}
+.note-title{font-family:var(--serif);font-size:16px;font-weight:700;letter-spacing:2px;}
+.note-ex{font-size:11.5px;color:var(--ink2);margin-top:5px;line-height:1.9;letter-spacing:.5px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap;}
+/* 手记详情 = 展品卡 */
+.exhibit{margin:22px 26px 30px;border:1px solid var(--line2);background:var(--card);padding:28px 26px 22px;position:relative;}
+.exhibit::after{content:"";position:absolute;top:14px;right:14px;width:8px;height:8px;border:1px solid var(--red);border-radius:50%;}
+.ex-no{display:flex;justify-content:space-between;font-size:9px;letter-spacing:4px;color:var(--ink3);text-transform:uppercase;font-weight:600;}
+.ex-title{font-family:var(--serif);font-size:27px;font-weight:700;letter-spacing:5px;margin-top:16px;line-height:1.5;}
+.ex-meta{font-size:10.5px;color:var(--ink2);margin-top:10px;letter-spacing:3px;}
+.ex-line{width:36px;height:2px;background:var(--ink);margin:22px 0;}
+.ex-body{font-family:var(--serif);font-size:14.5px;line-height:2.3;color:#2C2C28;white-space:pre-wrap;letter-spacing:1px;}
+.ex-foot{margin-top:26px;padding-top:12px;border-top:1px dashed var(--line2);display:flex;justify-content:space-between;
+  font-size:8.5px;letter-spacing:3px;color:var(--ink3);text-transform:uppercase;font-weight:600;}
+
+/* 相册 = 幻灯片标本 */
+.slide{border:1px solid var(--line2);background:var(--card);margin:0 26px 18px;padding:20px 18px 16px;cursor:pointer;transition:border-color .15s;}
+.slide:hover{border-color:var(--ink);}
+.slide-top{display:flex;justify-content:space-between;font-size:8.5px;letter-spacing:3px;color:var(--ink3);text-transform:uppercase;font-weight:600;}
+.slide-img{aspect-ratio:4/3;margin:14px 0;overflow:hidden;border:1px solid var(--line);position:relative;}
+.slide-img img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(.35);}
+.slide-cap{font-family:var(--serif);font-size:14.5px;text-align:center;letter-spacing:3px;margin-top:4px;}
+.slide-param{text-align:center;font-size:9px;color:var(--ink3);letter-spacing:3px;margin-top:8px;font-variant-numeric:tabular-nums;}
+/* 查看器 */
+.pv{position:absolute;inset:0;background:var(--paper);z-index:60;display:flex;flex-direction:column;}
+.pv-top{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;font-size:10px;letter-spacing:3px;color:var(--ink2);}
+.pv-close{font-size:22px;padding:0 8px;color:var(--ink);cursor:pointer;line-height:1;}
+.pv-stage{flex:1;display:flex;flex-direction:column;justify-content:center;padding:10px 24px;gap:20px;}
+.pv-box{border:1px solid var(--line2);background:var(--card);padding:16px;}
+.pv-img{aspect-ratio:4/3;overflow:hidden;border:1px solid var(--line);}
+.pv-img img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(.3);}
+.pv-nav2{display:flex;justify-content:space-between;padding:12px 24px 22px;font-size:11px;letter-spacing:3px;font-weight:700;color:var(--ink);}
+.pv-nav2 span{cursor:pointer;padding:6px 10px;}
+.pv-nav2 .off{visibility:hidden;}
+
+/* 资产 = 持有清单 */
+.ast-sum{border:1px solid var(--line2);background:var(--card);padding:24px 22px;margin-bottom:20px;position:relative;}
+.ast-sum::after{content:"CONFIDENTIAL";position:absolute;top:14px;right:14px;font-size:8px;letter-spacing:3px;color:var(--red);border:1px solid var(--red);padding:2px 6px;transform:rotate(3deg);font-weight:700;}
+.ast-label{font-size:9px;letter-spacing:4px;color:var(--ink3);text-transform:uppercase;font-weight:600;}
+.ast-num{font-family:var(--serif);font-size:34px;font-weight:700;margin-top:10px;font-variant-numeric:tabular-nums;letter-spacing:1px;}
+.ast-who{font-size:11px;color:var(--ink2);margin-top:8px;letter-spacing:2px;}
+.ast-bar{display:flex;height:5px;margin-top:18px;}
+.ast-bar span{display:block;height:100%;}
+.ast-legend{display:flex;flex-wrap:wrap;gap:5px 13px;margin-top:9px;}
+.ast-legend .al{display:flex;align-items:center;gap:5px;font-size:9.5px;color:var(--ink2);letter-spacing:1px;}
+.ast-legend .al i{width:7px;height:7px;display:block;}
+.ast-sec{margin-bottom:18px;}
+.ast-sec-head{display:flex;align-items:baseline;gap:12px;padding:0 2px 10px;}
+.ast-idx{font-family:var(--serif);font-size:12px;color:var(--ink3);}
+.ast-sec-name{font-family:var(--serif);font-size:17px;font-weight:700;letter-spacing:3px;}
+.ast-sec-pct{margin-left:auto;font-size:10px;color:var(--ink2);font-variant-numeric:tabular-nums;letter-spacing:1px;}
+.ast-item{display:flex;gap:12px;background:var(--card);border:1px solid var(--line2);padding:14px 16px;margin-bottom:8px;align-items:flex-start;}
+.ast-item-main{flex:1;min-width:0;}
+.ast-item-name{font-family:var(--serif);font-size:14.5px;font-weight:700;letter-spacing:1px;}
+.ast-item-desc{font-size:11px;color:var(--ink2);margin-top:5px;line-height:1.9;letter-spacing:.5px;}
+.ast-item-val{font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums;flex-shrink:0;font-family:"SF Mono","Courier New",monospace;padding-top:2px;}
+
+/* 音乐 / 搜索 */
+.trk{display:flex;gap:14px;align-items:baseline;padding:13px 2px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .15s;}
+.trk:hover{background:rgba(0,0,0,.08);}
+.trk:hover .trk-name{color:var(--red);}
+.trk-no{font-family:var(--serif);font-size:12px;color:var(--ink3);width:24px;flex-shrink:0;}
+.trk-name{font-family:var(--serif);font-size:14.5px;font-weight:700;letter-spacing:1px;}
+.trk-artist{font-size:10.5px;color:var(--ink2);letter-spacing:1px;margin-left:auto;text-align:right;flex-shrink:0;max-width:45%;}
+.sq{display:flex;align-items:baseline;gap:12px;padding:13px 2px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .15s;}
+.sq:hover{background:rgba(0,0,0,.08);}
+.sq:hover .sq-q{color:var(--red);}
+/* 论坛帖子 */
+.post{background:var(--card);border:1px solid var(--line2);padding:16px 17px 13px;margin-bottom:11px;position:relative;}
+.post-top{display:flex;justify-content:space-between;align-items:center;font-size:8.5px;letter-spacing:2.5px;text-transform:uppercase;font-weight:600;}
+.post-board{border:1px solid var(--line2);padding:2px 8px;color:var(--ink2);background:var(--paper);}
+.post-likes{color:var(--red);font-variant-numeric:tabular-nums;letter-spacing:1px;}
+.post-title{font-family:var(--serif);font-size:15.5px;font-weight:700;letter-spacing:1px;margin-top:11px;line-height:1.7;}
+.post-body{font-size:12px;color:#66645C;line-height:2;margin-top:8px;letter-spacing:.5px;}
+.post-meta{font-size:9.5px;color:var(--ink3);letter-spacing:1.5px;margin-top:11px;border-top:1px dashed var(--line2);padding-top:9px;font-variant-numeric:tabular-nums;}
+.sq-q{font-size:13px;font-weight:600;letter-spacing:.5px;}
+.sq-time{margin-left:auto;font-size:10px;color:var(--ink2);flex-shrink:0;font-variant-numeric:tabular-nums;letter-spacing:1px;}
+
+/* 出行 = 票根 */
+.pt{border:1px dashed var(--line2);background:var(--card);padding:18px 18px 14px;margin-bottom:12px;position:relative;}
+.pt-type{font-size:8.5px;letter-spacing:4px;color:var(--ink3);text-transform:uppercase;font-weight:600;display:flex;justify-content:space-between;}
+.pt-route{font-family:var(--serif);font-size:18px;font-weight:700;letter-spacing:2px;margin-top:12px;}
+.pt-route .arr{color:var(--ink3);margin:0 8px;font-weight:400;}
+.pt-detail{font-size:11px;color:var(--ink2);margin-top:7px;line-height:1.9;letter-spacing:.5px;}
+.pt-foot{display:flex;justify-content:space-between;font-size:8.5px;letter-spacing:3px;color:var(--ink3);margin-top:13px;border-top:1px dashed var(--line2);padding-top:9px;text-transform:uppercase;font-weight:600;font-variant-numeric:tabular-nums;}
+
+/* 外卖 = 订单签 */
+.od{border:1px solid var(--line2);background:var(--card);padding:16px 18px;margin-bottom:11px;}
+.od-top{display:flex;align-items:baseline;gap:10px;}
+.od-shop{font-family:var(--serif);font-size:15.5px;font-weight:700;letter-spacing:2px;}
+.od-status{margin-left:auto;font-size:8.5px;font-weight:700;letter-spacing:3px;border:1px solid var(--line2);padding:2px 8px;color:var(--ink2);}
+.od-items{font-size:11.5px;color:#66645C;margin-top:9px;line-height:1.9;letter-spacing:.5px;}
+.od-foot{display:flex;align-items:baseline;margin-top:10px;border-top:1px dashed var(--line2);padding-top:10px;}
+.od-time{font-size:10px;color:var(--ink2);letter-spacing:1px;}
+.od-price{margin-left:auto;font-family:var(--serif);font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;}
+
+.empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:var(--ink2);text-align:center;padding:0 44px;}
+.empty .big{font-family:var(--serif);font-size:40px;font-weight:700;color:var(--ink3);letter-spacing:10px;}
+.empty .eline{width:30px;height:1px;background:var(--red);}
+.empty p{font-size:11.5px;line-height:2.3;letter-spacing:2px;}
+
+.foot{margin-top:46px;text-align:center;font-size:9px;color:var(--ink3);letter-spacing:4px;line-height:2.6;text-transform:uppercase;}
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="page">
 
   <div class="topbar">
-    <div class="brand">
-      <div class="mark"></div>
-      <div class="name">PROMPT<span>FORGE</span></div>
+    <span class="tb-name">口袋电话</span>
+    <span class="tb-en">Pocket Phone · Archive Hall</span>
+    <div class="tb-right"><button class="mini-btn" id="btnDemo">载入演示角色</button></div>
+  </div>
+
+  <div class="hero">
+    <span class="vertical">所有秘密 皆留于此</span>
+    <div class="hero-kicker">CHARACTER DOSSIER GENERATOR</div>
+    <h1>每个人的手机，<br>都是一间<em>无人看管</em>的档案馆。</h1>
+    <p>投喂人设、剧情、user 设定与参考图片，AI 将替你把 TA 的手机整理成一座展厅——消息、手记、相册、搜索、票根、账单，逐件编号展出。数据只存在你自己的浏览器。</p>
+  </div>
+
+  <!-- 录入卡 -->
+  <div class="card" id="inputCard">
+    <div class="card-kicker">INTAKE · 档案入库</div>
+    <div class="card-title">档案录入</div>
+    <div class="card-rule"><span>四步喂料 · 只有第一步必填</span></div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-no">01</span><span class="step-name">角色人设</span><span class="step-en">Profile</span><span class="step-hint">必填</span></div>
+      <div class="step-desc">TA 是谁。姓名、身份、性格、关系网、秘密——越具体，展厅越真。</div>
+      <div class="drop" id="dropProfile">
+        拖入人设文件，或点击选择 · <b>.docx / .txt / .md / .json</b>
+        <div class="drop-file" id="profileFileName"></div>
+        <input type="file" id="fileProfile" accept=".docx,.txt,.md,.json" style="display:none">
+      </div>
+      <textarea id="profile" placeholder="或直接粘贴人设文字……"></textarea>
     </div>
-    <div class="tabs">
-      <button class="tab on" data-tab="gen">指令生成</button>
-      <button class="tab" data-tab="char">角色工坊</button>
-      <button class="tab" data-tab="img">生图提示词</button>
-      <button class="tab" data-tab="style">文风提炼</button>
-      <button class="tab" data-tab="diag">报错诊断</button>
-      <button class="tab" data-tab="hist">历史记录</button>
+
+    <div class="step">
+      <div class="step-head"><span class="step-no">02</span><span class="step-name">专属剧情</span><span class="step-en">Story</span><span class="step-hint">选填</span></div>
+      <div class="step-desc">正文、剧本、大纲都行。剧情会融进聊天记录、手记与搜索历史。</div>
+      <div class="drop" id="dropStory">
+        拖入剧情文件，或点击选择 · <b>.docx / .txt / .md</b>
+        <div class="drop-file" id="storyFileName"></div>
+        <input type="file" id="fileStory" accept=".docx,.txt,.md" style="display:none">
+      </div>
+      <textarea id="storyInput" style="min-height:70px;margin-top:10px" placeholder="或直接粘贴剧情文字……"></textarea>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-no">03</span><span class="step-name">User 人设</span><span class="step-en">User Persona</span><span class="step-hint">选填</span></div>
+      <div class="step-desc">「你」的设定。聊天记录里 from=me 的发言会严格符合这份人设。</div>
+      <div class="drop" id="dropUser">
+        拖入 user 人设文件，或点击选择 · <b>.docx / .txt / .md / .json</b>
+        <div class="drop-file" id="userFileName"></div>
+        <input type="file" id="fileUser" accept=".docx,.txt,.md,.json" style="display:none">
+      </div>
+      <textarea id="userProfile" placeholder="或写几句：你是谁、和 TA 什么关系、说话什么风格……"></textarea>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-no">04</span><span class="step-name">世界背景</span><span class="step-en">World</span><span class="step-hint">选填</span></div>
+      <div class="step-desc">世界观、时代、地点、社会规则。背景设定会约束所有生成内容的合理性。</div>
+      <div class="drop" id="dropWorld">
+        拖入世界观文件，或点击选择 · <b>.docx / .txt / .md</b>
+        <div class="drop-file" id="worldFileName"></div>
+        <input type="file" id="fileWorld" accept=".docx,.txt,.md" style="display:none">
+      </div>
+      <textarea id="worldInput" style="min-height:56px;margin-top:10px" placeholder="或直接写几句世界背景……"></textarea>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-no">05</span><span class="step-name">当前情节</span><span class="step-en">Current Scene</span><span class="step-hint">选填</span></div>
+      <div class="step-desc">故事正进展到哪一幕、什么场景。手机内容会围绕这个「当下」展开。</div>
+      <div class="drop" id="dropScene">
+        拖入当前情节文件，或点击选择 · <b>.docx / .txt / .md</b>
+        <div class="drop-file" id="sceneFileName"></div>
+        <input type="file" id="fileScene" accept=".docx,.txt,.md" style="display:none">
+      </div>
+      <textarea id="sceneInput" style="min-height:56px;margin-top:10px" placeholder="或直接写：当前进展到的情节 / 场景……"></textarea>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-no">06</span><span class="step-name">参考图片</span><span class="step-en">Reference</span><span class="step-hint">选填 · 可多选</span></div>
+      <div class="step-desc">截图、剧照、漫画。AI 会读图分析剧情与人物对话，图会作为展品进入 TA 的相册。</div>
+      <div class="drop" id="dropImg">
+        拖入图片，或点击选择（建议配支持视觉的模型，如 kimi-latest）
+        <input type="file" id="fileImg" accept="image/*" multiple style="display:none">
+      </div>
+      <div class="img-grid" id="imgGrid"></div>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-no">07</span><span class="step-name">专属指令</span><span class="step-en">Character Rules</span><span class="step-hint">选填 · 最高优先级</span></div>
+      <div class="step-desc">这个角色专属的规矩：不能写什么、必须是什么调性、语气禁区、称呼规范、雷区……这里的指令优先级最高，会和角色人设一起被逐条强制执行。</div>
+      <div class="drop" id="dropRules">
+        拖入指令文件，或点击选择 · <b>.docx / .txt / .md</b>
+        <div class="drop-file" id="rulesFileName"></div>
+        <input type="file" id="fileRules" accept=".docx,.txt,.md" style="display:none">
+      </div>
+      <textarea id="rulesInput" style="min-height:56px;margin-top:10px" placeholder="或直接写：这个角色不能提什么、必须是什么风格、雷区、称呼规范……"></textarea>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-no">08</span><span class="step-name">世界书</span><span class="step-en">Worldbook</span><span class="step-hint">选填 · 可多选 · 逐条强制采用</span></div>
+      <div class="step-desc">SillyTavern 世界书 .json、设定集、资料卡都可以。AI 会逐条读完，只要场景相关，条目内容就会落进聊天记录、手记、资产、搜索等栏目。</div>
+      <div class="drop" id="dropWorldbook">
+        拖入世界书文件，或点击选择 · <b>.json / .txt / .md</b> · 支持多选（SillyTavern 格式自动解析）
+        <div class="drop-file" id="worldbookFileName"></div>
+        <input type="file" id="fileWorldbook" accept=".json,.txt,.md" multiple style="display:none">
+      </div>
+      <textarea id="worldbookInput" style="min-height:56px;margin-top:10px" placeholder="或直接粘贴世界书条目文字……"></textarea>
+    </div>
+
+    <div class="gen-row">
+      <button class="btn btn-primary" id="btnGen">生成展厅</button>
+      <button class="btn btn-ghost" id="btnRe">换个版本</button>
+      <div class="status" id="status"></div>
+      <div class="export-row">
+        <button class="mini-btn" id="btnCopy">复制档案</button>
+        <button class="mini-btn" id="btnJson">下载 JSON</button>
+      </div>
+    </div>
+
+    <details>
+      <summary>AI 接口设置（Kimi / OpenAI 兼容接口）</summary>
+      <div class="api-grid">
+        <div class="field"><label>API 地址</label><input id="apiBase" value="https://api.moonshot.cn/v1"></div>
+        <div class="field"><label>API KEY · 只存你的浏览器</label><input id="apiKey" type="password" placeholder="sk-..."></div>
+        <div class="field model-wrap">
+          <label>模型 <span id="fetchModels" style="color:var(--red);cursor:pointer;float:right;letter-spacing:0">⇅ 拉取</span></label>
+          <input id="apiModel" value="kimi-k2-0711-preview" placeholder="点上方拉取，或手动输入" readonly>
+          <div class="model-drop" id="modelDrop"></div>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <!-- 展厅 -->
+  <div class="stage" id="stage">
+    <div class="stage-head">
+      <span class="stage-title">TA 的手机</span>
+      <span class="stage-en">Exhibition Hall</span>
+      <span class="stage-desc" id="stageDesc">尚未开展 · 录入档案后点「生成展厅」</span>
+    </div>
+    <div class="window">
+      <div class="sb">
+        <span id="sbTime">01:05</span>
+        <span style="display:flex;gap:7px;align-items:center">
+          <svg width="15" height="10" viewBox="0 0 16 11" fill="#1A1A18"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.3" y="5" width="3" height="6" rx="1"/><rect x="8.6" y="2.6" width="3" height="8.4" rx="1"/><rect x="12.9" y="0" width="3" height="11" rx="1" opacity=".25"/></svg>
+          <svg width="15" height="10" viewBox="0 0 16 12" fill="none" stroke="#1A1A18" stroke-width="1.5" stroke-linecap="round"><path d="M1.5 4.2a10 10 0 0 1 13 0M4 6.8a6.4 6.4 0 0 1 8 0M6.6 9.3a2.8 2.8 0 0 1 2.8 0"/><circle cx="8" cy="10.8" r="1" fill="#1A1A18" stroke="none"/></svg>
+          <svg width="21" height="10" viewBox="0 0 24 12"><rect x="0.8" y="0.8" width="19" height="10.4" rx="3.2" fill="none" stroke="#1A1A18" stroke-opacity=".3" stroke-width="1.2"/><rect x="2.6" y="2.6" width="13" height="6.8" rx="1.8" fill="#1A1A18"/><rect x="21.4" y="3.8" width="2" height="4.4" rx="1" fill="#1A1A18" fill-opacity=".3"/></svg>
+        </span>
+      </div>
+      <div class="viewport" id="viewport"></div>
+      <div class="navbar" id="navbar"></div>
     </div>
   </div>
 
-  <!-- ═══════ 面板一：指令生成 ═══════ -->
-  <section class="panel active" id="panel-gen">
-    <div class="hero">
-      <div class="kicker">WORLD INFO / PROMPT ENGINEERING — 001</div>
-      <h1>世界书 <em>/</em> 指令生成器</h1>
-      <p>选择目标模型与场景，描述你的需求，生成深度适配该模型特性的结构化指令。全部数据只存在你自己的浏览器里。</p>
-    </div>
-
-    <div class="step">
-      <div class="step-head"><span class="step-no">01</span><span class="step-title">选择目标模型</span></div>
-      <div class="chips" id="modelChips"></div>
-      <div class="step-note" id="modelTip"></div>
-    </div>
-
-    <div class="step">
-      <div class="step-head"><span class="step-no">02</span><span class="step-title">使用场景</span></div>
-      <div class="chips" id="sceneChips"></div>
-    </div>
-
-    <div class="step">
-      <div class="step-head"><span class="step-no">03</span><span class="step-title">风格 · 格式 · 篇幅</span></div>
-      <div class="chips" id="styleChips"></div>
-      <div class="chips" id="fmtChips" style="margin-top:10px"></div>
-      <div class="chips" id="lenChips" style="margin-top:10px"></div>
-    </div>
-
-    <div class="step">
-      <div class="step-head"><span class="step-no">04</span><span class="step-title">描述你的需求</span></div>
-      <textarea id="needInput" placeholder="例如：我想让 AI 扮演一个赛博朋克世界酒馆的老板，性格外冷内热，能记住客人说过的话，不要替我做决定……"></textarea>
-      <div class="hint"><span id="charCount">0 字</span><span>Ctrl + Enter 快速生成</span></div>
-    </div>
-
-    <div class="actions">
-      <button class="btn" id="genBtn">生成指令 →</button>
-      <button class="btn ghost" id="resetBtn1">清空重填</button>
-      <span class="mini" id="saveNote">生成后自动存入「历史记录」</span>
-    </div>
-
-    <div class="out">
-      <div class="out-bar">
-        <span class="out-label">OUTPUT</span>
-        <div class="out-meta" id="outMeta"></div>
-      </div>
-      <div class="out-body">
-        <div class="empty" id="genEmpty" style="border:none;border-radius:0 0 14px 14px">还没有内容 —— 完成上方四步后点击「生成指令」</div>
-        <pre id="genOut" style="display:none"></pre>
-        <div class="out-foot" id="genFoot" style="display:none">
-          <span class="mini" id="genStats"></span>
-          <button class="copy-btn" id="copyBtn">复制</button>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════ 面板：角色工坊 ═══════ -->
-  <section class="panel" id="panel-char">
-    <div class="hero">
-      <div class="kicker">CHARACTER WORKSHOP — 002</div>
-      <h1>角色<em>工坊</em></h1>
-      <p>上传角色设定文件，勾选要防的「病」，引擎按你的设定 + 目标模型拼装成品角色指令。灵感来自你的 🌲 / 淡水季 世界书库。</p>
-    </div>
-
-    <div class="step">
-      <div class="step-head"><span class="step-no">01</span><span class="step-title">上传 / 粘贴角色设定</span></div>
-      <div class="up-row">
-        <textarea id="charPaste" placeholder="粘贴角色卡 / 设定全文；或直接点右边上传 .txt / .docx 文件（SillyTavern 角色卡导出的 json/txt 也可以）" style="min-height:150px"></textarea>
-        <div class="drop" id="charDrop" style="min-height:150px">
-          <div class="plus" id="charPlus">＋</div>
-          <div id="charDropText">上传设定文件<br>.txt / .docx / .json</div>
-        </div>
-        <input type="file" id="charFile" accept=".txt,.docx,.json" style="display:none">
-      </div>
-      <div id="charParseInfo" class="step-note"></div>
-    </div>
-
-    <div class="step">
-      <div class="step-head"><span class="step-no">02</span><span class="step-title">勾选要防的「病」</span></div>
-      <div class="chips" id="modChips"></div>
-    </div>
-
-    <div class="step">
-      <div class="step-head"><span class="step-no">03</span><span class="step-title">目标模型</span></div>
-      <div class="chips" id="charModelChips"></div>
-    </div>
-
-    <div class="step">
-      <div class="step-head"><span class="step-no">04</span><span class="step-title">补充要求（可选）</span></div>
-      <textarea id="charExtra" placeholder="例如：他是清冷型，台词要少而准；重点防他变粘人" style="min-height:80px"></textarea>
-    </div>
-
-    <div class="actions">
-      <button class="btn" id="charBtn">生成角色指令 →</button>
-      <span class="mini">成品直接可贴进 system prompt / 世界书</span>
-    </div>
-
-    <div class="out">
-      <div class="out-bar"><span class="out-label">CHARACTER KIT</span><div class="out-meta" id="charMeta"></div></div>
-      <div class="out-body">
-        <div class="empty" id="charEmpty" style="border:none;border-radius:0 0 14px 14px">上传设定并勾选模块后点「生成角色指令」</div>
-        <pre id="charOut" style="display:none"></pre>
-        <div class="out-foot" id="charFoot" style="display:none">
-          <span class="mini" id="charStats"></span>
-          <button class="copy-btn" id="charCopy">复制</button>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════ 面板：生图提示词 ═══════ -->
-  <section class="panel" id="panel-img">
-    <div class="hero">
-      <div class="kicker">IMAGE PROMPT FORGE — 003</div>
-      <h1>生图<em>提示词</em></h1>
-      <p>上传一张参考图，本地分析构图、色调与明暗；再选主体、风格和光线，生成「iPhone 随拍真实感」路线的英文 Prompt + Negative Prompt。</p>
-    </div>
-
-    <div class="step">
-      <div class="step-head"><span class="step-no">01</span><span class="step-title">上传参考图片</span></div>
-      <div class="up-row">
-        <div class="drop" id="imgDrop" style="width:100%;min-height:170px">
-          <div class="plus" id="imgPlus">＋</div>
-          <div id="imgDropText">点我上传参考图<br>不会上传服务器，仅本地分析</div>
-          <img id="imgPrev" style="display:none;max-height:220px" alt="预览">
-        </div>
-        <input type="file" id="imgFile" accept="image/*" style="display:none">
-      </div>
-      <div id="imgInfoText" class="step-note"></div>
-    </div>
-
-    <div class="step">
-      <div class="step-head"><span class="step-no">02</span><span class="step-title">主体类型</span></div>
-      <div class="chips" id="imgSubjectChips"></div>
-      <div class="step-head" style="margin-top:18px"><span class="step-no">03</span><span class="step-title">画面风格</span></div>
-      <div class="chips" id="imgStyleChips"></div>
-      <div class="step-head" style="margin-top:18px"><span class="step-no">04</span><span class="step-title">光线环境</span></div>
-      <div class="chips" id="imgLightChips"></div>
-    </div>
-
-    <div class="actions">
-      <button class="btn" id="imgBtn">生成提示词 →</button>
-    </div>
-
-    <div class="out">
-      <div class="out-bar"><span class="out-label">IMAGE PROMPT</span><div class="out-meta" id="imgMeta"></div></div>
-      <div class="out-body">
-        <div class="empty" id="imgEmpty" style="border:none;border-radius:0 0 14px 14px">上传图片并选好参数后点「生成提示词」</div>
-        <pre id="imgOut" style="display:none"></pre>
-        <div class="out-foot" id="imgFoot" style="display:none">
-          <span class="mini" id="imgStats"></span>
-          <button class="copy-btn" id="imgCopyPrompt">复制 Prompt</button>
-          <button class="copy-btn" id="imgCopyNeg">复制 Negative</button>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════ 面板：文风提炼 ═══════ -->
-  <section class="panel" id="panel-style">
-    <div class="hero">
-      <div class="kicker">VOICE DISTILLER — 004</div>
-      <h1>文风<em>提炼</em></h1>
-      <p>粘贴一段你爱不释手的文字，本地统计它的句长、对话占比、高频意象与语气词，生成一份「像它但绝不抄袭」的 AI 聊天文风指令。</p>
-    </div>
-
-    <div class="step">
-      <div class="step-head"><span class="step-no">01</span><span class="step-title">粘贴参考文字</span></div>
-      <textarea id="styleInput" placeholder="粘贴 300 字以上效果最佳：一段小说、一段聊天记录、一段你喜欢的 AI 回复……" style="min-height:170px"></textarea>
-      <div class="hint"><a id="styleSampleBtn">填入一段示例</a><span>仅本地分析，不会上传</span></div>
-      <div id="styleStats" class="step-note"></div>
-    </div>
-
-    <div class="actions">
-      <button class="btn" id="styleBtn">提炼文风指令 →</button>
-    </div>
-
-    <div class="out">
-      <div class="out-bar"><span class="out-label">VOICE PROFILE</span><div class="out-meta" id="styleMeta"></div></div>
-      <div class="out-body">
-        <div class="empty" id="styleEmpty" style="border:none;border-radius:0 0 14px 14px">粘贴文字后点「提炼文风指令」</div>
-        <pre id="styleOut" style="display:none"></pre>
-        <div class="out-foot" id="styleFoot" style="display:none">
-          <span class="mini" id="styleFootStats"></span>
-          <button class="copy-btn" id="styleCopy">复制</button>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════ 面板二：报错诊断 ═══════ -->
-  <section class="panel" id="panel-diag">
-    <div class="hero">
-      <div class="kicker">ERROR DIAGNOSIS — 005</div>
-      <h1>报错诊断</h1>
-      <p>粘贴报错文本，或直接上传报错截图（本地 OCR 识别，不上传服务器）。自动匹配错误模式并给出修复步骤，结果自动存入历史。</p>
-    </div>
-
-    <div class="step">
-      <div class="step-head"><span class="step-no">01</span><span class="step-title">粘贴报错 / 上传截图</span></div>
-      <div class="up-row">
-        <textarea id="errInput" placeholder="把完整报错粘贴到这里：Python Traceback、API 返回、浏览器控制台报错……"></textarea>
-        <div class="drop" id="dropZone">
-          <div class="plus" id="dropPlus">＋</div>
-          <div id="dropText">上传报错截图<br>自动识别文字</div>
-          <img id="dropImg" style="display:none" alt="预览">
-        </div>
-        <input type="file" id="fileInput" accept="image/*" style="display:none">
-      </div>
-      <div id="ocrStatus"></div>
-      <div class="hint"><a id="sampleBtn">填入一个示例报错</a><span>Ctrl + Enter 快速分析</span></div>
-    </div>
-
-    <div class="actions">
-      <button class="btn" id="diagBtn">开始分析 →</button>
-      <button class="btn ghost" id="resetBtn2">清空</button>
-    </div>
-
-    <div class="out">
-      <div class="out-bar"><span class="out-label">DIAGNOSIS</span><div class="out-meta" id="diagMeta"></div></div>
-      <div class="out-body">
-        <div class="empty" id="diagEmpty" style="border:none;border-radius:0 0 14px 14px">还没有内容 —— 粘贴报错或上传截图后点击「开始分析」</div>
-        <div id="diagOut" style="padding:6px 10px 16px"></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════ 面板三：历史记录 ═══════ -->
-  <section class="panel" id="panel-hist">
-    <div class="hero">
-      <div class="kicker">LOCAL ARCHIVE — 006</div>
-      <h1>历史记录</h1>
-      <p>每一次生成和诊断都自动保存在本机浏览器（localStorage），最多保留 50 条。清空浏览器数据会删除记录。</p>
-    </div>
-    <div class="hist-tools">
-      <div class="chips" id="histFilter">
-        <button class="chip on" data-f="all">全部</button>
-        <button class="chip" data-f="指令">指令生成</button>
-        <button class="chip" data-f="角色">角色工坊</button>
-        <button class="chip" data-f="生图">生图</button>
-        <button class="chip" data-f="文风">文风</button>
-        <button class="chip" data-f="诊断">报错诊断</button>
-      </div>
-      <button class="copy-btn" id="clearHist">清空全部记录</button>
-    </div>
-    <div id="histList"></div>
-  </section>
-
-  <footer>
-    <span>PromptForge v3.0 · 世界书 / 指令 / 生图 / 文风 全工坊</span>
-    <span>纯前端运行 · 数据仅存本机 · 灵感来自你的 🌲 / 淡水季 世界书库</span>
-  </footer>
+  <div class="foot">Printed by Pocket Phone<br>All secrets remain here</div>
 </div>
 
-<div class="toast" id="toast"></div>
-
 <script>
-/* ═══════════ 数据：模型知识库（深度适配） ═══════════ */
-const MODELS = [
-  { id:'claude', name:'Claude',
-    tag:'XML 结构化 · 长上下文 · 文风细腻',
-    points:[
-      '用 XML 标签组织设定（Claude 对 XML 最敏感）：<role> 角色、<background> 背景、<rules> 规则、<output> 输出要求',
-      '不可违背的底层规则放 system prompt；临时可变的剧情设定放对话里',
-      '规则写成短句列表，避免长句嵌套和多重否定',
-      '风格控制最有效的做法是给一个 2-3 句的「语气示例」内联在指令中',
-      '内容过长时先让其输出大纲，确认后再逐段展开',
-      '创作类 temperature 建议 0.8–1.0，严谨任务 0.2–0.5'
-    ],
-    skeleton:'<role>你是【角色身份】</role>\n<rules>\n- 规则一\n- 规则二\n</rules>\n<example>语气示例：「……」</example>' },
-  { id:'gpt', name:'GPT (OpenAI)',
-    tag:'system+user 双层 · JSON 模式 · 通用性强',
-    points:[
-      '关键规则放在 system 的最前面，并在末尾复述一次核心约束',
-      '需要稳定格式时开启 JSON mode：response_format 设为 json_object，指令中给出 JSON Schema',
-      '给一个完整的 few-shot 示例比十句描述更有效',
-      'system 只放角色与约束，任务描述放 user，两层不要混用',
-      'temperature：创作 0.7–1.0，逻辑/代码 0–0.3'
-    ],
-    skeleton:'System: 你是【角色】。必须遵守：1… 2… 3…\nUser: {任务描述 + 示例输出}\n（JSON 模式：{ "字段": "说明" }）' },
-  { id:'kimi', name:'Kimi',
-    tag:'超长上下文 · 适合完整世界书 · 中文优',
-    points:[
-      '充分利用长上下文：把完整世界书、角色卡、历轮剧情一次性放入，不用吝啬',
-      '最重要的设定放在文档最前面，Kimi 对开头内容注意力最强',
-      '超长的设定集先让模型「用 5 条要点总结这份设定」再继续对话，可显著减少遗忘',
-      '涉及文件/长文时，明确说「先阅读全文再回答」',
-      'temperature 默认即可，角色扮演建议 0.7–0.9'
-    ],
-    skeleton:'【以下是完整世界观设定，请务必通读后再开始】\n1. 世界背景…\n2. 角色…\n3. 规则…\n（请先复述你理解的核心设定）' },
-  { id:'gemini', name:'Gemini',
-    tag:'systemInstruction 字段 · 多模态 · 百万级上下文',
-    points:[
-      '核心指令放入 systemInstruction 字段而不是混在对话里',
-      '角色扮演内容容易被安全策略拦截时，调低 safetySettings（HARASSMENT/DANGEROUS 等类别设为 BLOCK_NONE 需自担风险）',
-      '支持图片输入：可直接把角色立绘、世界观地图作为设定素材',
-      '超百万 token 上下文适合整本书级别设定，但仍建议分章节加标题',
-      'temperature 创作类 0.9–1.0，配合 topP 0.95'
-    ],
-    skeleton:'systemInstruction: 【角色+规则+边界】\n（安全设置：按需调低类别阈值）\n（可附：角色参考图）' },
-  { id:'deepseek', name:'DeepSeek',
-    tag:'reasoner 思维链 · 推理强 · 性价比之王',
-    points:[
-      '选模型：日常用 deepseek-chat；复杂推理/写大纲用 deepseek-reasoner（会输出思维链）',
-      '复杂任务在指令里要求「先给出思考/规划，再输出最终内容」',
-      'reasoner 不适合开 JSON mode，结构化输出优先用 deepseek-chat + response_format',
-      'temperature：创作 0.7–1.0，代码/逻辑 0–0.3',
-      '支持 system 角色设定，多层规则建议编号列表'
-    ],
-    skeleton:'System: 你是【角色】。规则：1… 2…\nUser: 请先规划思路，再给出正文。\n（reasoner 模型会自带思维链输出）' },
-  { id:'qwen', name:'通义千问',
-    tag:'DashScope 体系 · 中文自然 · 结构化输出',
-    points:[
-      '使用 system + user 双层结构，system 放角色与边界',
-      '需要 JSON 时用 response_format: { type: "json_object" } 并在指令里给 Schema',
-      '中文指令表达自然即可，不必翻译成英文',
-      '复杂设定拆成编号条目，qwen 对条理化指令遵循度高',
-      'temperature 创作 0.7–0.9，严谨任务 0.2 左右'
-    ],
-    skeleton:'System: 你是【角色】，遵守：1… 2…\nUser: 【任务】\n（JSON 模式：{"key": "value"}）' },
-  { id:'novelai', name:'NovelAI / SillyTavern',
-    tag:'角色卡 · 世界书 Lorebook · 采样参数',
-    points:[
-      '角色描述中使用 {{char}}（角色名）与 {{user}}（用户名）占位符',
-      '世界书条目用关键词触发（keys）：核心词 + 同义词 + 常见变体，避免整本常驻',
-      '单条条目建议控制在 200 token 内，优先写「改变剧情走向的信息」而非百科',
-      '条目插入位置：影响人设的放 after char（在角色卡之后）、背景 lore 放 before char',
-      '联动采样参数：创意写作 temperature 0.8–1.0、top_p 0.9、repetition penalty 1.05 左右',
-      '严禁无故 OOC（跳出角色）；用 <START> 分隔的示例对话段落教它说话方式'
-    ],
-    skeleton:'{{char}} 是【身份】。{{char}} 说话的方式：【口癖】。\n【世界书条目示例】\nkeys: 关键词1, 同义词\n位置: after char\n内容: 【200 token 内】' },
-  { id:'other', name:'其他模型',
-    tag:'通用适配 · 规则分层',
-    points:[
-      '指令分四层：角色 → 目标 → 约束 → 输出格式，每层之间空行',
-      '一条指令只承载一个要求，复杂规则拆成编号列表',
-      '关键约束在开头声明一次、结尾复述一次',
-      '给一个输出示例，格式类要求靠示例而不是描述',
-      '生成后让模型自检：「逐条核对是否满足上述全部规则」'
-    ],
-    skeleton:'你是【角色】。\n目标：…\n约束：1… 2… 3…\n输出格式：【示例】' },
-];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
-const SCENES = [
-  { id:'roleplay', name:'角色扮演 · 世界书' },
-  { id:'writing', name:'小说 / 文案写作' },
-  { id:'code', name:'编程开发' },
-  { id:'study', name:'学习辅导' },
-  { id:'work', name:'办公效率' },
-  { id:'custom', name:'自定义' },
-];
-const STYLES = ['专业严谨','温柔亲切','幽默风趣','简洁直接','文艺细腻'];
-const FMTS = ['分节结构化','Markdown','纯文本','条目列表'];
-const LENS = ['精简','标准','详细'];
+/* ==================== 演示数据 ==================== */
+const DEMO_PROFILE = `姓名：顾聿深，34 岁，港岛顾氏集团第二代掌权人，董事会主席。
+性格：表面冷戾克制，话极少，说一不二；掌控欲极强，对认定的人和物有偏执的占有欲。
+关系：助理 Mark（跟了他九年，最信任的人）、家庭医生 Dr.Chen、母亲（长居英国）、马术教练老曾、死对头周牧野（周氏集团）、以及"你"——他养着的人。
+秘密：失眠七年，靠处方安眠药；三个月前体检心脏查出问题，没有告诉任何人；给你的转账全部走私人离岸账户，不走公司账；书房保险柜里放着不属于他的东西——你第一次落在他那儿的一枚发夹。`;
 
-const state = { model:'claude', scene:'roleplay', style:'专业严谨', fmt:'Markdown', len:'标准' };
+const DEMO_DATA = {
+  character:{name:"顾聿深",tag:"勿扰"},
+  chats:[
+    {contact:"你",time:"03:33",preview:"[转账] ¥520,000.00",pin:true,unread:0,msgs:[
+      {from:"them",text:"你的固执 委屈 隐忍 迈巴赫 保时捷 宝马 银行卡 红包 转账 现金 别墅 私人飞机 古董名画 黄金 公司 股份 我照单全收"},
+      {from:"me",text:"又在哪看的段子 这么贪心啊"},
+      {from:"me",text:"不过除了委屈和隐忍 其他的本来也就都是你的"},
+      {from:"them",type:"transfer",amount:"¥520,000.00",status:"已收款"},
+      {from:"them",text:"知道就好"},
+      {from:"me",type:"voice",dur:7,text:"这么晚了你怎么还没睡，药吃了吗"},
+      {from:"them",text:"吃了。你别管"},
+      {from:"me",text:"我不管谁管"},
+      {from:"them",text:"……"},
+      {from:"them",text:"下不为例"}
+    ]},
+    {contact:"Mark（助理）",time:"23:48",preview:"明早的会我改到十点了",pin:true,unread:2,msgs:[
+      {from:"them",text:"顾生，明早的会我改到十点了"},
+      {from:"them",text:"陈医生说您的复查报告出来了，他打了三个电话来"},
+      {from:"me",text:"知道了"},
+      {from:"them",text:"那您的药……"},
+      {from:"me",text:"Mark。"},
+      {from:"them",text:"明白，我不问"}
+    ]},
+    {contact:"Dr.Chen",time:"周二",preview:"检查结果您必须尽快来取",unread:0,msgs:[
+      {from:"them",text:"顾先生，检查结果您必须尽快来取，电话里说不清楚"},
+      {from:"me",text:"直说"},
+      {from:"them",text:"……不建议拖。您心里有数的"},
+      {from:"me",text:"先别告诉任何人，包括 Mark"}
+    ]},
+    {contact:"周牧野",time:"上周",preview:"顾总最近睡得还好吗",unread:0,msgs:[
+      {from:"them",text:"顾总最近睡得还好吗"},
+      {from:"me",text:"不劳费心"},
+      {from:"them",text:"听说你砸了三个亿在临水的地块上，胆子不小"},
+      {from:"me",text:"你消息很灵通，就是眼神不太好"},
+      {from:"them",text:"呵"}
+    ]},
+    {contact:"母亲",time:"周一",preview:"圣诞节回来吗",unread:1,msgs:[
+      {from:"them",text:"深仔，圣诞节回来吗"},
+      {from:"me",text:"看情况"},
+      {from:"them",text:"你每次都是这三个字。妈妈只是想见见你"},
+      {from:"me",text:"嗯"},
+      {from:"them",text:"最近转咗季，你咳咗成个月，记得睇医生\u241F最近换季，你咳了一个月了，记得看医生"},
+      {from:"me",text:"知道了。你也注意身体"},
+      {from:"them",text:"是不是又熬夜了"}
+    ]},
+    {contact:"老曾（马术教练）",time:"10月20日",preview:"那匹马只认你",unread:0,msgs:[
+      {from:"them",text:"顾生，那匹马这几天不肯进食，兽医来看过，说没病"},
+      {from:"them",text:"我猜它是想你了。马比人诚实"},
+      {from:"me",text:"我周六过去"},
+      {from:"them",text:"要我把马鞍准备好吗"},
+      {from:"me",text:"备好"}
+    ]},
+    {contact:"法务部-周律师",time:"10月15日",preview:"离岸那边的文件都办妥了",unread:0,msgs:[
+      {from:"them",text:"顾总，离岸那边的文件都办妥了，按您吩咐的走了私人通道"},
+      {from:"me",text:"痕迹清干净"},
+      {from:"them",text:"放心，查不到您头上"},
+      {from:"me",text:"不是怕我查，是不想让家里那位有心理负担"},
+      {from:"them",text:"明白"}
+    ]},
+    {contact:"物业管家",time:"10月8日",preview:"19楼书房的灯又亮了一夜",unread:0,msgs:[
+      {from:"them",text:"顾先生，19楼书房的灯又亮了一夜，需要我安排人过去看看吗"},
+      {from:"me",text:"不用，我在里面"},
+      {from:"them",text:"好的。那位先生/小姐的快递我照旧放门口了"}
+    ]}
+  ],
+  calls:[
+    {name:"你",sub:"呼出 · 00:47",time:"03:58",type:"out",detail:"你接起来就骂我，骂了半分钟，问我药吃了没。我说吃了。你说「骗人」。然后我们都沉默了三十秒。你先挂的。"},
+    {name:"Dr.Chen",sub:"呼出 · 06:12",time:"周二 22:15",type:"out",detail:"报告我看了。他说建议尽快安排手术。我说再等等。他说等不了太久。我说，我知道。"},
+    {name:"Mark（助理）",sub:"呼入 · 董事会提前",time:"周二 08:02",type:"in",detail:"董事会提前到周四，周牧野那边也会到场。我说知道了。他犹豫了一下问我要不要推掉，我说不用。"},
+    {name:"周牧野",sub:"呼入 · 未接",time:"周一 01:23",type:"missed",detail:""},
+    {name:"母亲",sub:"呼出 · 说了不到一分钟",time:"10月19日",type:"out",detail:"问圣诞节回不回去。我说看情况。她说又在熬夜吧。我说没有。她叹了口气，说「深仔，你骗人从小就不会」。"},
+    {name:"老曾（马术教练）",sub:"呼出 · 订周六的马场",time:"10月20日",type:"out",detail:"周六的马场我包了。老曾问要不要备双人鞍，我说单人。他笑了一声，没再说话。"},
+    {name:"未知号码",sub:"呼入 · 响了一声就挂",time:"10月17日 03:33",type:"missed",detail:""}
+  ],
+  notes:[
+    {date:"10月23日",title:"梦",body:"又梦到那片海。醒来的时候枕巾是湿的，不知道是不是汗。\n医生说心悸和梦没关系，让我少喝咖啡。可他不知道我根本不喝咖啡。\n睡不着不是因为咖啡。\n海喺度，人唔喺度。\u241F海还在，人不在。"},
+    {date:"10月19日",title:"周六",body:"去看它。备最好的鞍。\n有些东西你不常去看，它就真的会生病给你看。"},
+    {date:"10月14日",title:"备忘",body:"保险柜密码不能再用她的生日了，太明显。\n换成我们第一次见面那天的日期。这个只有我知道。\n——不对，万一哪天我忘了呢。\n算了，忘了就忘了吧，反正人比密码可靠。"},
+    {date:"10月7日",title:"",body:"今天她/他笑了三次。记一下。没有原因，就是想记。"}
+  ],
+  album:[
+    {cap:"书房。窗帘拉了三层，还是挡不住光。",hue:210},
+    {cap:"凌晨四点的中环。车很少，路很空。",hue:260},
+    {cap:"它不肯吃草料。蹲下来看了它很久。",hue:120},
+    {cap:"去年冬天，码头上拍的。删了又恢复。",hue:30}
+  ],
+  assets:{
+    networth:"142.7亿",subtitle:"顾聿深 · 个人名下",
+    sections:[
+      {title:"不动产",pct:38,items:[
+        {name:"港岛半山独栋 · 19楼整层",desc:"不住人，但每周都回去。书房灯常年亮着",value:"8.6亿"},
+        {name:"浅水湾度假屋",desc:"登记在离岸公司名下，母亲不知道",value:"2.1亿"},
+        {name:"伦敦肯辛顿公寓",desc:"离母亲的住所隔着两条街，没告诉过她",value:"1.4亿"}]},
+      {title:"股权与集团",pct:41,items:[
+        {name:"顾氏集团 34% 流通股",desc:"董事会里没人知道他在失眠",value:"102亿"},
+        {name:"周氏集团做空头寸",desc:"私人账户开的，对标周牧野",value:"-3.2亿"}]},
+      {title:"流动资产",pct:21,items:[
+        {name:"离岸私人账户",desc:"给TA的每一笔转账都从这里出",value:"9.8亿"},
+        {name:"瑞士保险柜 · 日内瓦",desc:"里面不是文件，是一枚发夹",value:"——"}]}
+    ]
+  },
+  music:[
+    {song:"富士山下",artist:"陈奕迅",reason:"失眠那几年唯一的歌。前奏一响，心跳会慢下来。手机换过三部，这首歌一次都没丢。",plays:1287,added:"2019年4月",lyric:"要拥有必先懂失去怎接受"},
+    {song:"Weightless",artist:"Marconi Union",reason:"助眠专用。没用，但该放还是放，放着像一种交代。",plays:356,added:"2024年11月",lyric:"（纯音乐）"},
+    {song:"Hotel California",artist:"Eagles",reason:"老曾的车上只有这一张碟。听了九年，前奏一响就会想起马场的味道。",plays:208,added:"2017年6月",lyric:"You can check out any time you like, but you can never leave\u241F你可以随时退房，却永远无法离开"},
+    {song:"夜曲",artist:"肖邦 · 拉赫玛尼诺夫改编",reason:"陈医生说心率不齐的人少听摇滚。那就听这个。听到第三分钟，一九几几年的华沙和现在的书房是一样的黑。",plays:97,added:"2026年8月",lyric:"（纯音乐）"},
+    {song:"喜欢你",artist:"Beyond",reason:"歌单里最老的一首。来源不明。恢复过一次数据，别的都丢了，它没有。",plays:2333,added:"——",lyric:"喜欢你 那双眼动人 笑声更迷人"},
+    {song:"沉默的声部",artist:"私人歌单 · 仅自己可见",reason:"建这个歌单的人不是我。",plays:1,added:"2026年10月",lyric:"——"}
+  ],
+  search:[
+    {q:"长期失眠 心脏 会不会猝死",time:"03:47",posts:[
+      {board:"健康树洞",title:"连续失眠第五年，昨天体检心脏出问题了，有一样的吗",author:"凌晨四点的人",time:"2026-09",body:"楼主先说情况：每天睡不到三小时，心率最近经常过百。医生只说「注意休息」。想问下有没有过来人，这种情况到底危不危险……",likes:892,replies:341},
+      {board:"健康树洞",title:"【科普】长期失眠对心脏的影响，比你想的大（转载）",author:"心内科王医生",time:"2026-06",body:"睡眠少于6小时的人群，心血管疾病风险显著升高。建议尽早就诊，不要自行叠加助眠药物……",likes:1203,replies:89},
+      {board:"匿名区",title:"不敢让家里人知道，我靠两种药才能睡着",author:"已注销",time:"2026-08",body:"吃完一种醒三次，加了一种才勉强睡够四小时。怕上瘾，更怕猝死。这事我谁都没说过……",likes:567,replies:256}
+    ]},
+    {q:"安眠药 两种 能不能一起吃",time:"03:52",posts:[
+      {board:"用药咨询",title:"两种安眠药能不能同服？在线等，挺急的",author:"睡不着的人",time:"2026-10",body:"处方一种，自己又买了一种。单吃都没效果了，想试试一起吃，有没有人知道会不会出事……",likes:145,replies:203},
+      {board:"用药咨询",title:"【置顶】本版禁止指导叠加用药！出现不适请立即就医",author:"版主-药师老周",time:"2025-12",body:"近期有多起镇静药物叠加使用的危险案例，本版一律不提供此类指导。如有需要请挂睡眠门诊……",likes:3201,replies:45}
+    ]},
+    {q:"他/她最近为什么不回消息 是生气了吗",time:"01:12",posts:[
+      {board:"情感树洞",title:"已读不回三天了，我哪里做错了吗",author:"等消息的人",time:"2026-10",body:"平时再忙也会回个表情。这次一条都没回。是不是我上次说的话太过分了，可是我道歉了啊……",likes:76,replies:154},
+      {board:"情感树洞",title:"高赞回答：不回消息的人其实在等你先低头",author:"情感博主小满",time:"2026-09",body:"成年人的疏远很少是突然的。如果还在乎，就别赌气了，先发条消息不会死……",likes:2341,replies:312}
+    ]},
+    {q:"信托 受益人 可以随时改吗",time:"10月21日",posts:[
+      {board:"理财讨论",title:"家族信托设立后，受益人可以随时变更吗？",author:"离岸架构师",time:"2026-05",body:"视信托条款而定，可撤销信托的委托人通常保留变更权。涉及跨境架构建议咨询专业律师……",likes:432,replies:67}
+    ]},
+    {q:"心脏支架 术后还能骑马吗",time:"10月18日"},
+    {q:"人为什么会梦到同一片海",time:"10月16日"},
+    {q:"周氏集团 最近 资金链",time:"10月12日"},
+    {q:"怎么把礼物送得不像是补偿",time:"10月9日"}
+  ],
+  travel:[
+    {type:"航班",from:"香港 HKG",to:"伦敦 LHR",detail:"国泰 CX255 · 头等 · 独自出行",time:"11月22日 出发"},
+    {type:"高铁",from:"西九龙",to:"深圳北",detail:"一等座 · 临水的地块要去看一眼",time:"10月26日 09:00"},
+    {type:"车程",from:"半山宅",to:"马场",detail:"司机老周 · 每周六固定路线",time:"10月25日 06:30"},
+    {type:"航班",from:"苏黎世 ZRH",to:"香港 HKG",detail:"没有公务记录，只为开一只保险柜",time:"10月5日"},
+    {type:"车程",from:"公司",to:"19楼",detail:"没有回家，车在地库停了整夜",time:"10月23日 23:58"}
+  ],
+  food:[
+    {shop:"一品轩 · 深夜档",items:"鲍鱼粥×1、虾饺×2、老火汤×1",price:"¥1,860",status:"已送达",time:"10月24日 02:14"},
+    {shop:"Café Gray",items:"Flat White ×2、没动过的班尼迪克蛋",price:"¥236",status:"已送达",time:"10月22日 08:30"},
+    {shop:"利苑酒家",items:"烧鹅例牌、老火汤、白米饭×1（备注：汤要热的）",price:"¥642",status:"已送达",time:"10月19日 12:40"},
+    {shop:"张记糖水",items:"莲子百合×1、红豆沙×1（第二份是给司机的）",price:"¥58",status:"已送达",time:"10月15日 23:02"}
+  ],
+  groups:[
+    {name:"马会 · 周六局",time:"昨天",preview:"老曾：它今天肯吃草料了，就等你周六来",pin:false,unread:3,hue:120,msgs:[
+      {from:"them",who:"老曾",text:"顾生，它今天肯吃草料了"},
+      {from:"them",who:"老曾",text:"要我看，它是掐着日子等你周六来"},
+      {from:"me",text:"嗯"},
+      {from:"them",who:"马会小赵",text:"顾主席，周六场地还是给您留老位置？"},
+      {from:"me",text:"照旧，备最好的鞍"},
+      {from:"them",who:"老曾",text:"我就说，马比人诚实"}
+    ]},
+    {name:"顾氏董事会 · 内部（18）",time:"周二",preview:"Mark：周四会议改到十点，收到请回复",pin:false,unread:0,hue:210,msgs:[
+      {from:"them",who:"Mark（助理）",text:"各位，周四的董事会改到十点，收到请回复"},
+      {from:"them",who:"CFO-苏",text:"收到"},
+      {from:"them",who:"法务-周律师",text:"收到，材料已备齐"},
+      {from:"me",text:"收到"},
+      {from:"them",who:"战略部-何",text:"顾总，周氏那边据说也会派人到场，需要回避部分议程吗"},
+      {from:"me",text:"不用。他坐他的，我开我的"}
+    ]}
+  ]
+};
 
-/* ═══════════ 工具 ═══════════ */
-const $ = id => document.getElementById(id);
-function toast(msg){
-  const t = $('toast'); t.textContent = msg; t.classList.add('show');
-  clearTimeout(t._tm); t._tm = setTimeout(()=>t.classList.remove('show'), 1800);
+const SCHEMA = JSON.stringify({
+  character:{name:"角色姓名",tag:"一句状态签名"},
+  chats:[{contact:"联系人名",time:"如 03:33 或 周二",preview:"最后一条消息预览",pin:true,unread:0,
+    msgs:[{from:"them或me",text:"消息内容"},{from:"them",text:"食咗饭未\u241F吃饭了吗"},{from:"them",type:"voice",dur:7,text:"语音的文字稿"},{from:"them",type:"transfer",amount:"¥520,000.00",status:"已收款"}]}],
+  calls:[{name:"",sub:"呼出 · 00:47",time:"",type:"out或in或missed",detail:"这通电话实际聊了什么——摘要或简短对话还原，80字以内，没内容的电话写空字符串"}],
+  notes:[{date:"10月23日",title:"",body:"手记正文"}],
+  album:[{cap:"照片配字"}],
+  assets:{networth:"142.7亿",subtitle:"",sections:[{title:"",pct:40,items:[{name:"",desc:"一句有故事感的备注",value:""}]}]},
+  music:[{song:"",artist:"",reason:"为什么喜欢这首歌/背后的故事",plays:0,added:"加入歌单的时间",lyric:"一句代表性歌词，英文必须附中文翻译"}],
+  search:[{q:"",time:"",posts:[{board:"板块名",title:"帖子标题",author:"",time:"",body:"内容摘要一两句，像真的刷到的帖子",likes:0,replies:0}]}],
+  travel:[{type:"航班",from:"",to:"",detail:"",time:""}],
+  food:[{shop:"",items:"",price:"",status:"",time:""}],
+  groups:[{name:"群名",time:"",preview:"",pin:false,unread:0,msgs:[{from:"them",who:"说话人名字",text:""},{from:"me",text:""}]}]
+});
+
+let DATA=null, view={app:"home",idx:0,chat:-1};
+let storyText="", worldText="", sceneText="", rulesText="", worldbookText="", uploadedImages=[];
+
+/* ==================== 生成 ==================== */
+async function ftimeout(url,ms,opts){
+  const ctl=new AbortController();
+  const t=setTimeout(()=>ctl.abort(),ms);
+  try{ return await fetch(url,Object.assign({},opts,{signal:ctl.signal})); }
+  finally{ clearTimeout(t); }
 }
-async function copyText(text){
-  try{ await navigator.clipboard.writeText(text); }
-  catch(e){
-    const ta=document.createElement('textarea'); ta.value=text;
-    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+async function generate(){
+  const profile=$("profile").value.trim(), key=$("apiKey").value.trim(),
+        base=$("apiBase").value.trim().replace(/\/$/,""), model=$("apiModel").value.trim();
+  const st=$("status"), btn=$("btnGen");
+  if(!profile){ st.textContent="先上传或粘贴角色人设～"; st.className="status err"; return; }
+  if(!key||!model){ st.textContent="填一下 API Key 和模型（录入卡最下方展开）"; st.className="status err"; return; }
+  btn.disabled=true; st.className="status";
+  const up = userProfile();
+  const worldMix=(worldText+"\n"+$("worldInput").value).trim();
+  const sceneMix=(sceneText+"\n"+$("sceneInput").value).trim();
+  const storyMix=(storyText+"\n"+$("storyInput").value).trim();
+  const rulesMix=(rulesText+"\n"+$("rulesInput").value).trim();
+  const worldbookMix=(worldbookText+"\n"+$("worldbookInput").value).trim();
+  let storyDigest=null, stage="准备中", secs=0;
+  const feedInfo=[worldbookMix?"世界书 "+worldbookMix.length+" 字":null,rulesMix?"专属指令 "+rulesMix.length+" 字":null,storyMix?"剧情 "+storyMix.length+" 字":null,worldMix?"世界背景 "+worldMix.length+" 字":null,sceneMix?"当前情节 "+sceneMix.length+" 字":null,up?"user 人设 "+up.length+" 字":null,uploadedImages.length?"图片 "+uploadedImages.length+" 张":null].filter(Boolean).join(" · ");
+  const timer=setInterval(()=>{
+    secs+=3;
+    st.innerHTML='<span class="dot"></span>'+stage+' · 已等待 '+secs+'s（内容多时需 1-3 分钟，别关页面）'
+      +(feedInfo?'<br>本次带入：'+feedInfo:'')
+      +(storyDigest?'<br>已消化：'+((storyDigest.contacts||[]).length)+' 人物 · '+((storyDigest.events||[]).length)+' 事件 · '+((storyDigest.worldRules||[]).length)+' 规则 · '+((storyDigest.sceneFacts||[]).length)+' 事实':'');
+  },3000);
+  st.innerHTML='<span class="dot"></span>正在整理展厅……'+(feedInfo?'<br>本次带入：'+feedInfo:'<br><b style="color:var(--red)">本次只带了角色人设，剧情/user 人设是空的</b>');
+  // 剧情消化：先把剧情提炼成「人物/事件/语气」清单，生成时逐条强制采用
+  if(storyMix){
+    stage="剧情入库 · 提炼人物与事件";
+    try{
+      const dr = await ftimeout(base+"/chat/completions",90000,{method:"POST",
+        headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
+        body:JSON.stringify({model:model,temperature:0.3,
+          messages:[
+            {role:"system",content:"你是剧情分析员。阅读用户给出的材料，提取结构化素材，只输出 JSON：{\"contacts\":[\"姓名（与主角的关系，一句话）\",共3-8人],\"events\":[\"关键事件一句话，含场景或时间\",共4-6条],\"voices\":[\"体现人物说话语气的原话或描述\",共2-4条],\"worldRules\":[\"世界观的硬性设定：时代/地点/社会规则/身份约束\",共3-6条],\"sceneFacts\":[\"当前情节的事实：时间/地点/正在发生的事/人物当下状态\",共3-5条]}"},
+            {role:"user",content:(profile?"主角人设：\n"+profile+"\n\n":"")+(worldMix?"世界背景：\n"+worldMix+"\n\n":"")+(sceneMix?"当前情节：\n"+sceneMix+"\n\n":"")+"剧情文本：\n"+storyMix}
+          ],
+          response_format:{type:"json_object"}})});
+      if(dr.ok){
+        const dj=await dr.json();
+        storyDigest=JSON.parse(dj.choices[0].message.content.replace(/```json|```/g,"").trim());
+        const hasArr=a=>Array.isArray(a)&&a.length;
+        if(!storyDigest||(!hasArr(storyDigest.events)&&!hasArr(storyDigest.worldRules)&&!hasArr(storyDigest.sceneFacts))) storyDigest=null;
+      }
+    }catch(de){ storyDigest=null; }
   }
+  let sysPrompt = "你是角色扮演资料整理员。根据下方给出的材料生成这个角色的手机内容档案。"
+    + "\n\n【执行优先级 · 从高到低，必须逐层阅读、逐层落实】1) 角色人设 2) 角色专属指令 3) user 人设 4) 世界背景与世界书 5) 剧情与当前情节。若材料之间冲突，按此顺序裁决；但绝不允许跳过或忽略任何一层——尤其是角色人设：所有生成内容必须严格符合角色人设，绝不允许架空角色人设；不落实人设与专属指令的输出视为废品，必须重写。"
+    + (uploadedImages.length?"若附有图片，请分析图片中呈现的剧情氛围、人物关系与对话风格，并让相册文案呼应图片内容；":"")
+    + "\n\n【角色人设】\n" + profile;
+  if(rulesMix) sysPrompt += "\n\n【角色专属指令 · 最高优先级硬约束】\n" + rulesMix
+    + "\n（以上指令必须逐条严格执行：指令禁止出现的元素一个字都不许出现；指令要求的风格、称呼、禁区必须贯穿聊天记录、手记、搜索、相册配文等所有栏目。若与剧情或世界观冲突，以角色人设与专属指令为准，同时在世界观框架内保持自洽。）";
+
+  if(worldbookMix) sysPrompt += "\n\n【世界书 · 逐条阅读、逐条采用，绝不允许跳过】\n" + worldbookMix
+    + "\n（生成前必须先把以上每一条世界书条目读完：只要条目内容与当前场景、人物、地点、设定相关，就必须让它的信息真实出现在聊天记录、手记、资产、搜索、出行、通话等栏目中——可以暗示、侧面提及，但绝不允许一条相关条目都不体现；生成的任何内容与世界书冲突的，视为错误，必须重写。）";
+
+  if(storyMix && storyDigest){
+    sysPrompt += "\n\n【剧情素材 · 逐条强制采用】";
+    if(Array.isArray(storyDigest.contacts)&&storyDigest.contacts.length)
+      sysPrompt += "\n剧情人物（至少一半要出现在联系人/聊天记录里）：\n" + storyDigest.contacts.map((c,i)=>(i+1)+". "+c).join("\n");
+    sysPrompt += "\n关键事件（★以下每条事件都必须至少在聊天记录、手记、通话记录或搜索记录中的一个栏目留下痕迹，可以暗示、留白、侧面提及，但绝不允许一条都不出现）：\n" + storyDigest.events.map((e,i)=>(i+1)+". "+e).join("\n");
+    if(Array.isArray(storyDigest.voices)&&storyDigest.voices.length)
+      sysPrompt += "\n语气参考：" + storyDigest.voices.join("；");
+    if(Array.isArray(storyDigest.worldRules)&&storyDigest.worldRules.length)
+      sysPrompt += "\n世界观硬规则（★生成的一切内容不得与其中任何一条冲突）：\n" + storyDigest.worldRules.map((r,i)=>(i+1)+". "+r).join("\n");
+    if(Array.isArray(storyDigest.sceneFacts)&&storyDigest.sceneFacts.length)
+      sysPrompt += "\n当前情节事实（★聊天记录的时间、话题、手记情绪、搜索内容须与这些事实吻合，不得跳到别的时间线）：\n" + storyDigest.sceneFacts.map((r,i)=>(i+1)+". "+r).join("\n");
+    sysPrompt += "\n\n【剧情原文 · 细节以此为准】\n" + storyMix;
+  }
+  else if(storyMix) sysPrompt += "\n\n【剧情参考 · 必须严格遵守】\n" + storyMix
+    + "\n（以上剧情不是摆设：剧情里的关键人物、事件、矛盾、名场面，必须真实出现在聊天记录、手记、通话记录或搜索记录里；对话风格与人物关系以剧情为准，严禁无视或架空。）";
+  if(worldMix) sysPrompt += "\n\n【世界背景 · 必须严格遵守】\n" + worldMix
+    + "\n（以上世界设定是硬约束：时代、地点、社会规则、人物身份的合理性都以它为准，生成的任何内容不得与世界背景冲突。）";
+  if(sceneMix) sysPrompt += "\n\n【当前情节 · 必须严格遵守】\n" + sceneMix
+    + "\n（手机里的内容应围绕这个「当下」展开：聊天记录的时间、谈论的事、手记的情绪、搜索的内容，都要和当前情节/场景对得上，不得跳到无关的时间线。）";
+  if(up) sysPrompt += "\n\n【user 人设 · 逐条强制采用】\n" + up
+    + "\n（这是 TA 的手机：from=me 是手机主人（角色本人），其发言必须符合角色人设；user 人设是 from=them 的聊天对象，即手机主人对面的那个人——①对方的身份、称呼、与角色的关系以 user 人设为准，不得架空；②每 3 条 from=them 的消息里至少 1 条要体现 user 人设的口头禅/语气特征/口癖；③严禁把 from=them 写成角色本人、助理或第三人的腔调。生成完后自查 from=them 是否都像这位 user 会说的话，不像就重写。）";
+  sysPrompt += "\n\n【活人感是第一要求】1) 全部用简体中文；2) 所有内容必须符合人设"
+    + (storyText?"并与剧情参考一致":"") + "，并暗示人设里没明说的秘密、伏笔、矛盾；"
+    + "3) 金额、时间、地点合理可信，时间是2026年10月，货币符合角色所在地，金额写成纯数字加单位（如 1.5亿、8600万），不要用千分位逗号；"
+    + "4) 聊天记录必须像真人的微信记录而不是剧本对白：消息长短不一，允许连发两三条，偶尔只回一个“嗯”“好”，口语化，每个人物打字习惯明显不同；偶尔插入 type=voice 语音条（必须带 text 文字稿）和 type=transfer 转账；"
+    + "5) 搜索记录包含深夜搜索、不敢让人知道的搜索，措辞像随手打的；每条搜索须带 posts：1-3 条论坛式搜索结果（board 板块名、title 标题、author 昵称、time 时间、body 一两句摘要、likes 点赞数、replies 回复数），帖子内容要和搜索词及人设呼应，像角色真的半夜刷到的；手记口语、不连贯；通话记录必须填 detail（这通电话聊了什么，摘要或对话还原），有内容的通话比空记录真实；"
+    + "6) 若消息、手记、相册配文或通话内容里出现粤语或其他外语，必须写成「原文\u241F简体翻译」的格式（\u241F是分隔符，紧跟翻译，不加任何标注）；纯简体中文内容不需要翻译；"
+    + "7) 音乐歌单：必须符合人设与时代背景（年龄、地域、品味），中英文搭配，以角色真的会听、读者大概率听过的歌为主，不要清一色冷门英文歌，也不要生造查无此曲的歌名；每首歌必须给出 reason（这首歌对角色的意义/背后的故事，像秘密一样）、plays（累计播放次数，合理不夸张）、added（加入歌单的时间）、lyric（一句最能代表角色心境的歌词，英文必须附中文翻译，用\u241F分隔）；"
+    + "8) 资产档案：必须符合角色人设的真实经济水平——不是越有钱越好：角色拮据就拮据、负债就负债、普通中产就普通中产，人设没写经济状况时按其身份与职业合理推断，绝不默认生成巨额财富；金额数字合理可信（2026年），sections 可含「负债」（value 负数、不给 pct），每个条目带一句有故事感的备注；只输出 JSON，结构严格如下："+SCHEMA;
+
+  const contentParts=[{type:"text",text:"请严格按以上 system 中给出的角色人设"+(storyText?"与剧情参考":"")+(up?"与 user 人设":"")+"生成手机档案"+(uploadedImages.length?"，并参考以下图片":"")+"。"}];
+  uploadedImages.forEach(img=>contentParts.push({type:"image_url",image_url:{url:img}}));
+
+  try{
+    stage="主生成 · 撰写档案";
+    const res = await ftimeout(base+"/chat/completions",300000,{
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
+      body:JSON.stringify({model:model,temperature:0.9,
+        messages:[{role:"system",content:sysPrompt},{role:"user",content:contentParts}],
+        response_format:{type:"json_object"}})
+    });
+    if(!res.ok){
+      const t=await res.text();
+      let msg="接口报错 "+res.status+"："+t.slice(0,160);
+      if(uploadedImages.length && /image|vision|多模态|modality|400/.test(t+res.status))
+        msg += "（可能是这个模型不支持读图，把图片删掉或换成支持视觉的模型，如 kimi-latest）";
+      throw new Error(msg);
+    }
+    const j = await res.json();
+    let txt = j.choices[0].message.content.replace(/```json|```/g,"").trim();
+    let parsed = JSON.parse(txt);
+    const nm = profile.match(/姓名[:：\s]*([\u4e00-\u9fa5A-Za-z·]{2,8})/);
+    if(nm && parsed.character && parsed.character.name && parsed.character.name !== nm[1] && !parsed.character.name.includes(nm[1])){
+      st.innerHTML='<span class="dot"></span>名字对不上，正在重试……';
+      const res2 = await fetch(base+"/chat/completions",{
+        method:"POST",
+        headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
+        body:JSON.stringify({model:model,temperature:0.9,
+          messages:[
+            {role:"system",content:"你是角色扮演资料整理员。角色姓名必须严格等于"+nm[1]+"，不得改成别的名字。其他要求：全部简体中文；内容符合人设"+(storyText?"与剧情参考":"")+"，活人感第一，聊天记录像真人微信，金额时间合理（2026年10月），搜索记录有深夜的秘密感，手记口语不连贯，资产带故事感备注，只输出 JSON，结构严格如下："+SCHEMA},
+            {role:"user",content:contentParts}
+          ],
+          response_format:{type:"json_object"}})
+      });
+      if(res2.ok){
+        try{ parsed = JSON.parse((await res2.json()).choices[0].message.content.replace(/```json|```/g,"").trim()); }catch(e2){}
+      }
+    }
+    DATA = normalize(parsed);
+    if(uploadedImages.length){
+      uploadedImages.slice(0,6).forEach((img,k)=>{
+        const cap = (DATA.album[k] && DATA.album[k].cap) || "上传的图片";
+        DATA.album[k] = {cap, img};
+      });
+    }
+    save(); view={app:"home",idx:0,chat:-1}; render();
+    $("stageDesc").textContent = DATA.character.name + " 的展厅已开放 · 往下参观";
+    st.innerHTML="布展完成，往下参观。"; st.className="status";
+    $("stage").scrollIntoView({behavior:"smooth",block:"start"});
+  }catch(e){
+    st.textContent="生成失败："+(e.name==="AbortError"?"请求超时（2-5 分钟无响应）。可再点一次，或换模型/中转站":e.message)+"（也可以先点「演示」)";
+    st.className="status err";
+  }finally{ clearInterval(timer); btn.disabled=false; }
 }
-function nowStr(){
-  const d = new Date();
-  const p = n => String(n).padStart(2,'0');
-  return p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());
+let trid=0;
+const TR_SEP="\u241F"; // ␟ 原文/翻译分隔符
+function richText(s){
+  if(typeof s!=="string") return "";
+  if(!s.includes("\u241F")) return esc(s);
+  const k=s.indexOf("\u241F");
+  const raw=s.slice(0,k), tr=s.slice(k+1);
+  return '<span class="biline" onclick="this.classList.toggle(\'open\')"><span class="bl-raw">'+esc(raw)+'</span><span class="bl-tr"><span class="bl-dash"></span>'+esc(tr)+'</span></span>';
+}
+function plainText(s){ return typeof s==="string" ? s.split("\u241F")[0] : (s??""); }
+const userProfile=()=>$("userProfile").value.trim();
+
+function normalize(d){
+  const o = JSON.parse(JSON.stringify(DEMO_DATA));
+  if(!d || typeof d!=="object") return o;
+  for(const k of ["character","assets"]) if(d[k]&&typeof d[k]==="object") o[k]=Object.assign({},o[k],d[k]);
+  for(const k of ["chats","calls","notes","album","music","search","travel","food","groups"])
+    if(Array.isArray(d[k])&&d[k].length) o[k]=d[k];
+  if(!Array.isArray(o.assets.sections)||!o.assets.sections.length) o.assets.sections=DEMO_DATA.assets.sections;
+  o.chats.forEach(c=>{ if(c.hue===undefined) c.hue=hash(c.contact)%360; });
+  o.groups.forEach(c=>{ if(c.hue===undefined) c.hue=hash(c.name)%360; (c.msgs||[]).forEach(m=>{ if(m.from==="them"&&!m.who) m.who="群成员"; }); });
+  o.search.forEach(s=>{ if(!Array.isArray(s.posts)) s.posts=[]; });
+  o.album.forEach(p=>{ if(p.hue===undefined) p.hue=(typeof p.h==="number"?p.h:hash(String(p.cap)))%360; });
+  return o;
+}
+function hash(s){ let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0; return h; }
+const gray  = h => `hsl(${h%360},7%,${82+(h%4)*2}%)`;
+const gray2 = h => `hsl(${(h+25)%360},8%,${66+(h%3)*4}%)`;
+
+/* ==================== 渲染 ==================== */
+const APPS=[
+  {id:"chats",label:"消息",en:"Messages"},
+  {id:"calls",label:"通话",en:"Recents"},
+  {id:"notes",label:"手记",en:"Notes"},
+  {id:"album",label:"相册",en:"Slides"},
+  {id:"assets",label:"资产",en:"Holdings"},
+  {id:"music",label:"音乐",en:"Playlist"},
+  {id:"search",label:"搜索",en:"Search Log"},
+  {id:"travel",label:"出行",en:"Tickets"},
+  {id:"food",label:"外卖",en:"Orders"}
+];
+
+function pageHead(en,title){
+  return `<div class="pg">
+    <div class="pg-kicker"><span>EXHIBIT</span><span>${en}</span></div>
+    <div class="pg-title">${title}</div>
+    <div class="pg-rule"></div>`;
 }
 
-/* ═══════════ 历史记录（localStorage） ═══════════ */
-const HKEY = 'promptforge_hist_v2';
-function loadHist(){ try{ return JSON.parse(localStorage.getItem(HKEY)) || []; }catch(e){ return []; } }
-function pushHist(item){
-  const h = loadHist();
-  h.unshift(item);
-  localStorage.setItem(HKEY, JSON.stringify(h.slice(0,50)));
-  renderHist();
-}
-function delHist(id){
-  localStorage.setItem(HKEY, JSON.stringify(loadHist().filter(x=>x.id!==id)));
-  renderHist();
-}
-let histFilter = 'all';
-function renderHist(){
-  const list = $('histList');
-  const h = loadHist().filter(x => histFilter==='all' || x.type===histFilter);
-  if(!h.length){
-    list.innerHTML = '<div class="empty" style="margin-top:20px">暂无记录 —— 去「指令生成」或「报错诊断」用一次，结果就会自动存在这里</div>';
+function render(){
+  const vp=$("viewport"), nb=$("navbar");
+  if(!DATA){
+    vp.innerHTML='<div class="empty"><div class="big">未开展</div><div class="eline"></div><p>展厅空置<br>在上方录入档案后点「生成展厅」<br>TA 的秘密将逐件编号展出</p></div>';
+    nb.innerHTML=navHTML("none");
     return;
   }
-  list.innerHTML = '';
-  h.forEach(it=>{
-    const div = document.createElement('div');
-    div.className = 'hist-item';
-    const isDiag = it.type==='诊断';
-    const title = isDiag ? ('诊断：' + (it.summary || it.text.slice(0,40))) : it.text.split('\n').find(l=>l.trim() && !l.startsWith('【'))?.slice(0,50) || '（空）';
-    div.innerHTML =
-      '<div class="hist-sq' + (isDiag ? ' diag-sq' : '') + '">' + ({'指令':'PRM','诊断':'ERR','角色':'CHR','生图':'IMG','文风':'STY'}[it.type]||'TXT') + '</div>'
-      + '<div class="hist-main">'
-      +   '<div class="hist-title"></div>'
-      +   '<div class="hist-meta">' + it.type + ' · ' + (it.model || '') + (it.scene ? ' · ' + it.scene : '') + ' · ' + it.time + ' · ' + it.text.length + ' 字</div>'
-      + '</div>'
-      + '<div class="hist-acts">'
-      +   '<button class="hbtn" data-a="view">查看</button>'
-      +   '<button class="hbtn" data-a="copy">复制</button>'
-      +   '<button class="hbtn danger" data-a="del">删除</button>'
-      + '</div>';
-    div.querySelector('.hist-title').textContent = title;
-    div.querySelectorAll('.hbtn').forEach(b=>{
-      b.onclick = ()=>{
-        if(b.dataset.a==='view') viewHist(it);
-        if(b.dataset.a==='copy'){ copyText(it.text); toast('已复制到剪贴板'); }
-        if(b.dataset.a==='del'){ delHist(it.id); toast('已删除'); }
+  try{
+    if(view.app==="home"){ vp.innerHTML=homeHTML(); nb.innerHTML=navHTML("home"); return; }
+    if(view.app==="photoViewer"){ vp.innerHTML=photoViewerHTML(); nb.innerHTML=navHTML("photoViewer"); return; }
+    vp.innerHTML=appHTML(); nb.innerHTML=navHTML((view.app==="calls"||view.app==="music"||view.app==="search")&&view.idx>=0?"note":view.app);
+  }catch(e){
+    vp.innerHTML='<div class="empty"><div class="big">×</div><p>这一页出了点问题<br>回目录再进来试试</p></div>';
+    nb.innerHTML=navHTML("app");
+  }
+}
+
+/* 底部导航：返回桌面等问题彻底解决 */
+function navHTML(ctx){
+  let back="";
+  if(ctx==="chat"||ctx==="note") back=`<span class="nav-btn" onclick="navBack()">‹ 返回</span><span class="nav-sep"></span>`;
+  else if(ctx==="photoViewer") back=`<span class="nav-btn" onclick="navBack()">‹ 返回</span><span class="nav-sep"></span>`;
+  else if(ctx!=="home"&&ctx!=="none") back=`<span class="nav-btn" onclick="navBack()">‹ 目录</span><span class="nav-sep"></span>`;
+  return back+`<span class="nav-fill"></span><span class="nav-btn big" onclick="navHome()">⌂ 桌面</span><span class="nav-sep"></span><span class="nav-btn" onclick="navTop()">▲ 顶部</span>`;
+}
+function navHome(){ view={app:"home",idx:0,chat:-1}; render(); $("viewport").scrollTop=0; }
+function navTop(){ $("viewport").scrollTop=0; }
+function navBack(){
+  if(view.app==="photoViewer"){ view={app:"album",idx:0,chat:-1}; }
+  else if(view.app==="chats"&&view.chat>=0){ view.chat=-1; }
+  else if(view.app==="calls"&&view.idx>=0){ view.idx=-1; }
+  else if(view.app==="music"&&view.idx>=0){ view.idx=-1; }
+  else if(view.app==="search"&&view.idx>=0){ view.idx=-1; }
+  else if(view.app==="notes"&&view.idx>=0){ view.idx=-1; }
+  else { view={app:"home",idx:0,chat:-1}; }
+  render();
+}
+
+/* 桌面 = 展品目录 */
+function homeHTML(){
+  const d=DATA, now=new Date();
+  return `<div class="cat-head">
+      <div class="cat-kicker" style="display:flex;justify-content:space-between;font-size:9px;letter-spacing:4px;color:var(--ink3);text-transform:uppercase;font-weight:600;">
+        <span>Personal Archive</span><span>${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}</span>
+      </div>
+      <div class="cat-name" style="margin-top:14px;">${esc(d.character.name)}</div>
+      <div class="cat-tag">STATUS · <b>${esc(d.character.tag)}</b> · PERMANENT COLLECTION</div>
+    </div>
+    <div class="cat-quote">没有说出口的话，都替他存着。</div>
+    <div class="cat-list">
+      ${APPS.map((a,k)=>`<div class="cat-row" onclick="openApp('${a.id}')">
+        <span class="cat-no">${String(k+1).padStart(2,"0")}</span>
+        <span class="cat-name2">${a.label}</span>
+        <span class="cat-en">${a.en}</span>
+        <span class="cat-arrow">›</span>
+      </div>`).join("")}
+    </div>
+    <div class="cat-foot">Exhibition Catalogue · N°2026<br>Do Not Disturb</div>`;
+}
+
+function appHTML(){
+  const d=DATA, v=view.app, i=view.idx;
+  if(v==="chats"){
+    const convos=[
+      ...d.chats.map(c=>({c,grp:false})),
+      ...d.groups.map(c=>({c,grp:true}))
+    ];
+    if(view.chat>=0){ const it=convos[view.chat]; return chatHTML(it.c,it.grp); }
+    return pageHead("Messages · "+convos.length+" threads","消息")+`
+      <div class="rows">${convos.map(({c,grp},k)=>`
+        <div class="row" onclick="openChat(${k})">
+          <div class="row-sq ${grp?"group":""}">${grp?"群":esc(c.contact[0])}</div>
+          <div class="row-main">
+            <div class="row-top"><span class="row-name">${esc(grp?c.name:c.contact)}</span>${c.pin?'<span class="stamp">置顶</span>':""}${grp?'<span class="stamp red">群聊</span>':""}<span class="row-time">${esc(c.time||"")}</span></div>
+            <div class="row-sub">${esc(plainText(c.preview))}</div>
+          </div>
+          ${c.unread?`<span class="unread-dot">${c.unread}</span>`:""}
+        </div>`).join("")}</div>
+    </div>`;
+  }
+  if(v==="calls"){
+    if(i>=0){
+      const c=d.calls[i];
+      return `<div class="pg">
+        <div class="pg-kicker"><span>Call Transcript</span><span>${esc(c.time)}</span></div>
+        <div class="pg-title">${esc(c.name)}</div>
+        <div class="pg-rule"></div>
+        <div class="exhibit" style="margin:0">
+          <div class="ex-no"><span>${c.type==="missed"?"Missed":c.type==="in"?"Incoming":"Outgoing"}</span><span>${esc(c.sub)}</span></div>
+          <div class="ex-line"></div>
+          <div class="ex-body">${richText(c.detail||"这通电话没有留下内容。")}</div>
+          <div class="ex-foot"><span>Telephone Archive</span><span>Do Not Disturb</span></div>
+        </div>
+      </div>`;
+    }
+    return pageHead("Call Log · "+d.calls.length,"通话")+`
+      <div class="rows">${d.calls.map((c,k)=>`
+        <div class="row" onclick="openCall(${k})">
+          <div class="row-sq">${c.type==="missed"?"✕":c.type==="in"?"↓":"↑"}</div>
+          <div class="row-main">
+            <div class="row-top"><span class="row-name ${c.type==="missed"?"missed":""}">${esc(c.name)}</span>${c.type==="missed"?'<span class="stamp red">未接</span>':""}<span class="row-time">${esc(c.time)}</span></div>
+            <div class="row-sub">${esc(String(c.sub||"")).replace(/\n/g," · ")}</div>
+          </div>
+        </div>`).join("")}</div>
+    </div>`;
+  }
+  if(v==="notes"){
+    if(i>=0){
+      const n=d.notes[i];
+      return `<div class="exhibit">
+        <div class="ex-no"><span>EXHIBIT NO. ${String(i+1).padStart(2,"0")}</span><span>Notes Archive</span></div>
+        <div class="ex-title">${esc(n.title)}</div>
+        <div class="ex-meta">${esc(n.date)} · 只写给自己的</div>
+        <div class="ex-line"></div>
+        <div class="ex-body">${richText(n.body)}</div>
+        <div class="ex-foot"><span>Permanent Collection</span><span>Do Not Disturb</span></div>
+      </div>`;
+    }
+    return pageHead("Notes · "+d.notes.length,"手记")+`
+      <div class="rows">${d.notes.map((n,k)=>{
+        const m=String(n.date||"").match(/(\d{1,2})月(\d{1,2})日/);
+        return `
+        <div class="note-row" onclick="openNote(${k})">
+          <div class="note-date"><div class="note-day">${m?m[2]:"—"}</div><div class="note-mon">${m?m[1]+" 月":"DATE"}</div></div>
+          <div class="note-main"><div class="note-title">${esc(n.title)||"无题"}</div><div class="note-ex">${richText(n.body)}</div></div>
+        </div>`;}).join("")}</div>
+    </div>`;
+  }
+  if(v==="album"){
+    return pageHead("Slides · "+d.album.length,"相册")+`
+      <div style="margin-top:4px">${d.album.map((p,k)=>`
+        <div class="slide" onclick="openPhoto(${k})">
+          <div class="slide-top"><span>SLIDE 35MM</span><span>FRAME ${String(k+1).padStart(2,"0")}</span></div>
+          <div class="slide-img" ${p.img?'':'style="background:linear-gradient(160deg,'+gray(p.hue)+' 0%,'+gray2(p.hue)+' 100%);filter:grayscale(.3)"'}>${p.img?`<img src="${p.img}" alt="">`:""}</div>
+          <div class="slide-cap">${richText(p.cap)}</div>
+          <div class="slide-param">ISO 100 · 1/125s · f/2.8</div>
+        </div>`).join("")}</div>
+    </div>`;
+  }
+  if(v==="assets"){
+    const a=d.assets;
+    const secs=(a.sections||[]).filter(s=>Array.isArray(s.items)&&s.items.length);
+    const GRAYS=["#1A1A18","#B0452F","#8A8A84","#CFC9BE","#5C5C58"];
+    const bar = secs.some(s=>typeof s.pct==="number")
+      ? `<div class="ast-bar">${secs.map((s,k)=>`<span style="width:${s.pct||0}%;background:${GRAYS[k%GRAYS.length]}"></span>`).join("")}</div>
+         <div class="ast-legend">${secs.map((s,k)=>`<span class="al"><i style="background:${GRAYS[k%GRAYS.length]}"></i>${esc(s.title)} ${s.pct||0}%</span>`).join("")}</div>` : "";
+    return pageHead("Holdings · Assets","资产")+`
+      <div class="ast-sum">
+        <div class="ast-label">Net Worth · 净资产</div>
+        <div class="ast-num">${esc(a.networth)}</div>
+        <div class="ast-who">${esc(a.subtitle)}</div>
+        ${bar}
+      </div>
+      ${secs.map((s,k)=>`
+        <div class="ast-sec">
+          <div class="ast-sec-head"><span class="ast-idx">${String(k+1).padStart(2,"0")}</span><span class="ast-sec-name">${esc(s.title)}</span><span class="ast-sec-pct">${typeof s.pct==="number"?s.pct+"%":""}</span></div>
+          ${s.items.map(it=>`<div class="ast-item">
+            <div class="ast-item-main"><div class="ast-item-name">${esc(it.name)}</div><div class="ast-item-desc">${esc(it.desc)}</div></div>
+            <div class="ast-item-val">${esc(it.value)}</div>
+          </div>`).join("")}
+        </div>`).join("")}
+      <div style="text-align:center;font-size:8.5px;letter-spacing:4px;color:var(--ink3);margin-top:14px;text-transform:uppercase;">Verified 2026.10 · Registry Office</div>
+    </div>`;
+  }
+  if(v==="music"){
+    if(i>=0){
+      const m=d.music[i];
+      return `<div class="exhibit">
+        <div class="ex-no"><span>TRACK NO. ${String(i+1).padStart(2,"0")}</span><span>Playlist Archive</span></div>
+        <div class="ex-title">${esc(m.song)}</div>
+        <div class="ex-meta">${esc(m.artist)} · 播放 ${m.plays||0} 次 · ${esc(m.added||"加入时间不详")}</div>
+        <div class="ex-line"></div>
+        <div class="ex-body">${richText(m.reason||"这首歌没有留下备注。")}</div>
+        ${m.lyric&&m.lyric!=="——"?`<div style="margin-top:22px;padding-top:16px;border-top:1px dashed var(--line2);font-family:var(--serif);font-size:13.5px;line-height:2.2;color:var(--ink2);letter-spacing:1px;">♪ ${richText(m.lyric)}</div>`:""}
+        <div class="ex-foot"><span>Permanent Collection</span><span>Do Not Disturb</span></div>
+      </div>`;
+    }
+    return pageHead("Playlist · "+d.music.length,"音乐")+`
+      <div class="rows">${d.music.map((m,k)=>`
+        <div class="trk" onclick="openTrack(${k})"><span class="trk-no">${String(k+1).padStart(2,"0")}.</span><span class="trk-name">${esc(m.song)}</span><span class="trk-artist">${esc(m.artist)}</span></div>`).join("")}</div>
+      <div style="text-align:center;font-size:8.5px;letter-spacing:4px;color:var(--ink3);margin-top:16px;text-transform:uppercase;">Tap a track · 点开看这首歌的秘密</div>
+    </div>`;
+  }
+  if(v==="search"){
+    if(i>=0){
+      const s=d.search[i];
+      return `<div class="pg">
+        <div class="pg-kicker"><span>Search Results</span><span>${esc(s.time||"")}</span></div>
+        <div class="pg-title" style="font-size:23px;letter-spacing:2px;">⌕ ${esc(s.q)}</div>
+        <div class="pg-rule"></div>
+        ${(s.posts&&s.posts.length)?s.posts.map(p=>`
+          <div class="post">
+            <div class="post-top"><span class="post-board">${esc(p.board||"综合")}</span><span class="post-likes">▲ ${p.likes||0}</span></div>
+            <div class="post-title">${esc(p.title)}</div>
+            <div class="post-body">${richText(p.body||"")}</div>
+            <div class="post-meta">${esc(p.author||"匿名")} · ${esc(p.time||"")} · ${p.replies||0} 条回复</div>
+          </div>`).join("")
+        :`<div class="empty" style="height:auto;padding:34px 20px;"><div class="eline"></div><p>这个搜索没有留下结果<br>或者 TA 看到一半就退出了</p></div>`}
+      </div>`;
+    }
+    return pageHead("Search History · "+d.search.length,"搜索")+`
+      <div class="rows">${d.search.map((s,k)=>`
+        <div class="sq" onclick="openSearch(${k})"><span style="color:var(--ink3)">⌕</span><span class="sq-q">${esc(s.q)}</span><span class="sq-time">${esc(s.time)}</span></div>`).join("")}</div>
+      <div style="text-align:center;font-size:8.5px;letter-spacing:4px;color:var(--ink3);margin-top:16px;text-transform:uppercase;">Tap a query · 点进去看 TA 刷到了什么</div>
+    </div>`;
+  }
+  if(v==="travel"){
+    return pageHead("Tickets · "+d.travel.length,"出行")+`
+      <div style="margin-top:4px">${d.travel.map(t=>`
+        <div class="pt">
+          <div class="pt-type"><span>${esc(t.type)}</span><span>Boarding Pass</span></div>
+          <div class="pt-route">${esc(t.from)}<span class="arr">→</span>${esc(t.to)}</div>
+          <div class="pt-detail">${esc(t.detail||"")}</div>
+          <div class="pt-foot"><span>${esc(t.time)}</span><span>Non-Transferable</span></div>
+        </div>`).join("")}</div>
+    </div>`;
+  }
+  if(v==="food"){
+    return pageHead("Orders · "+d.food.length,"外卖")+`
+      <div style="margin-top:4px">${d.food.map(o=>`
+        <div class="od">
+          <div class="od-top"><span class="od-shop">${esc(o.shop)}</span><span class="od-status">${esc(o.status)}</span></div>
+          <div class="od-items">${esc(o.items)}</div>
+          <div class="od-foot"><span class="od-time">${esc(o.time)}</span><span class="od-price">${esc(o.price)}</span></div>
+        </div>`).join("")}</div>
+    </div>`;
+  }
+  return "";
+}
+
+/* 聊天页 */
+function voiceHTML(m){
+  const n=Math.max(5,Math.min(14,Math.round((m.dur||5)*1.1)));
+  let bars="";
+  for(let i=0;i<n;i++){ const hgt=[6,11,15,9,13,7,12,8,15,10,6,12,9,11][i%14]; bars+=`<i style="height:${hgt}px"></i>`; }
+  return `<div>
+    <div class="voice"><span class="vwave">${bars}</span><span class="vdur">${m.dur}″</span>
+    ${m.text?`<span class="vt-btn" onclick="event.stopPropagation();toggleVoiceText(this)">转文字</span>`:""}</div>
+    ${m.text?`<div class="v-text">${richText(m.text)}</div>`:""}
+  </div>`;
+}
+function toggleVoiceText(btn){
+  const box=btn.closest(".voice").parentElement.querySelector(".v-text");
+  if(!box) return;
+  const open = box.style.display==="block";
+  box.style.display = open?"none":"block";
+  btn.textContent = open?"转文字":"收起";
+}
+function msgHTML(m){
+  if(m.type==="transfer"){
+    return `<div class="ticket">
+      <div class="tk-top">
+        <div class="tk-check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1A1A18" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg></div>
+        <div><div class="tk-amt">${esc(m.amount)}</div><div class="tk-status">${esc(m.status)}</div></div>
+      </div>
+      <div class="tk-brand"><span>TRANSFER</span><span>VOID IF SHARED</span></div>
+    </div>`;
+  }
+  if(m.type==="voice") return voiceHTML(m);
+  return richText(m.text);
+}
+function chatHTML(c,isGroup){
+  const d=DATA;
+  const meAv = d.character.name;
+  return `<div class="chat-head2">
+      <div class="chat-who">${esc(isGroup?c.name:c.contact)}</div>
+      <div class="chat-en">${isGroup?"Group Chat · ":"Correspondence · "}${c.msgs.length} items</div>
+    </div>
+    <div class="chat-body">
+      <div class="time-divider">— 今天 01:05 —</div>
+      ${c.msgs.map((m)=>{
+        const inner = msgHTML(m);
+        const whoName = isGroup ? (m.who||"群成员") : c.contact;
+        const meHead = `<div class="msg-av me">${esc(meAv[0])}</div>`;
+        const themHead = `<div class="msg-av">${esc(String(whoName)[0])}</div>`;
+        const whoLabel = (isGroup && m.from!=="me") ? `<div class="msg-who">${esc(whoName)}</div>` : "";
+        if(m.type==="transfer"){
+          return `<div class="msg-row ${m.from==="me"?"me":""}">${m.from==="me"?meHead:themHead}<div class="msg-body">${whoLabel}${inner}</div></div>`;
+        }
+        const bub = `<div class="bubble ${m.from==="me"?"me":"them"}">${inner}</div>`;
+        return `<div class="msg-row ${m.from==="me"?"me":""}">${m.from==="me"?meHead:themHead}<div class="msg-body">${whoLabel}${bub}</div></div>`;}).join("")}
+      <div style="height:8px"></div>
+    </div>
+    <div class="chat-inputbar">说点什么……<span class="send">↑</span></div>`;
+}
+
+/* 照片查看器 */
+function photoViewerHTML(){
+  const d=DATA, i=view.idx, p=d.album[i];
+  return `<div class="pv">
+    <div class="pv-top"><span>FRAME ${String(i+1).padStart(2,"0")} / ${String(d.album.length).padStart(2,"0")}</span><span class="pv-close" onclick="navBack()">×</span></div>
+    <div class="pv-stage">
+      <div class="pv-box">
+        <div class="pv-img" ${p.img?'':'style="background:linear-gradient(160deg,'+gray(p.hue)+' 0%,'+gray2(p.hue)+' 100%);filter:grayscale(.3)"'}>${p.img?`<img src="${p.img}" alt="">`:""}</div>
+        <div class="slide-cap" style="margin-top:14px">${esc(p.cap)}</div>
+        <div class="slide-param">ISO 100 · 1/125s · f/2.8</div>
+      </div>
+    </div>
+    <div class="pv-nav2">
+      <span class="${i<=0?"off":""}" onclick="stepPhoto(-1)">‹ PREV</span>
+      <span class="${i>=d.album.length-1?"off":""}" onclick="stepPhoto(1)">NEXT ›</span>
+    </div>
+  </div>`;
+}
+
+function openApp(id){ view={app:id,idx:0,chat:-1}; render(); $("viewport").scrollTop=0; }
+function openCall(k){ view.idx=k; render(); $("viewport").scrollTop=0; }
+function openChat(k){ view.chat=k; render(); $("viewport").scrollTop=99999; }
+function openNote(k){ view.idx=k; render(); $("viewport").scrollTop=0; }
+function openTrack(k){ view.idx=k; render(); $("viewport").scrollTop=0; }
+function openSearch(k){ view.idx=k; render(); $("viewport").scrollTop=0; }
+function openPhoto(k){ view={app:"photoViewer",idx:k,chat:-1}; render(); }
+function stepPhoto(n){ view.idx=Math.max(0,Math.min((DATA.album.length||1)-1,view.idx+n)); render(); }
+
+function tickTime(){
+  const n=new Date();
+  $("sbTime").textContent = String(n.getHours()).padStart(2,"0")+":"+String(n.getMinutes()).padStart(2,"0");
+}
+setInterval(tickTime,15000); tickTime();
+
+/* ==================== 文件上传 ==================== */
+function parseCardJSON(text){
+  try{
+    const j=JSON.parse(text);
+    if(typeof j==="object"&&j){
+      const parts=[];
+      for(const k of ["name","description","personality","scenario","first_mes","mes_example","summary","tag","设定","人设"]){
+        if(j[k]) parts.push((k==="name"?"姓名：":"")+(typeof j[k]==="string"?j[k]:JSON.stringify(j[k])));
+      }
+      if(parts.length) return parts.join("\n");
+    }
+  }catch(e){}
+  return text;
+}
+function parseWorldBook(text){
+  try{
+    const j=JSON.parse(text);
+    if(j&&typeof j==="object"&&j.entries&&typeof j.entries==="object"){
+      const ents=Object.values(j.entries).sort((a,b)=>(a.uid||0)-(b.uid||0));
+      const parts=ents.map(e=>{
+        const keys=Array.isArray(e.key)?e.key.filter(Boolean).join(" / "):String(e.key||"");
+        const name=e.comment||keys||"未命名条目";
+        return "【"+name+"】"+(keys?"（触发词："+keys+"）":"")+"\n"+String(e.content||"");
+      }).filter(p=>p.replace(/【.*?】/,"").trim().length>0);
+      if(parts.length) return parts.join("\n\n");
+    }
+  }catch(e){}
+  return text;
+}
+function readWorldbookFile(file, cb){
+  readTextFile(file,(text,err)=>{ if(err){cb(null,err);return;} cb(parseWorldBook(text),null); });
+}
+function readTextFile(file, cb){
+  const ext=file.name.split(".").pop().toLowerCase();
+  if(ext==="docx"||ext==="doc"){
+    if(typeof mammoth==="undefined"){ cb(null,"docx 解析组件没加载出来（可能断网了），把文件另存为 .txt 再拖进来就行。"); return; }
+    const rd=new FileReader();
+    rd.onload=()=>{
+      mammoth.extractRawText({arrayBuffer:rd.result}).then(r=>cb((r.value||"").trim(),null))
+        .catch(()=>cb(null,"这个 docx 读不出来，试试另存为 .txt"));
+    };
+    rd.readAsArrayBuffer(file);
+    return;
+  }
+  const rd=new FileReader();
+  rd.onload=()=>{ let t=rd.result; if(ext==="json") t=parseCardJSON(t); cb(t.trim(),null); };
+  rd.readAsText(file);
+}
+function bindDrop(id, cb){
+  const el=$(id);
+  ["dragover","dragenter"].forEach(ev=>el.addEventListener(ev,e=>{e.preventDefault();el.classList.add("over");}));
+  ["dragleave","drop"].forEach(ev=>el.addEventListener(ev,e=>{e.preventDefault();el.classList.remove("over");}));
+  if(cb) el.addEventListener("drop",e=>{ const f=e.dataTransfer.files[0]; if(f) cb(f); });
+}
+
+$("dropProfile").onclick=()=>$("fileProfile").click();
+$("fileProfile").onchange=e=>readTextFile(e.target.files[0],(text,err)=>{
+  const st=$("status");
+  if(err){ st.className="status err"; st.textContent=err; return; }
+  $("profile").value=text; $("profileFileName").textContent="已读入："+e.target.files[0].name;
+  $("profileFileName").style.display="block"; save();
+  st.className="status"; st.textContent="已读入「"+e.target.files[0].name+"」";
+});
+bindDrop("dropProfile",f=>readTextFile(f,(text,err)=>{
+  const st=$("status");
+  if(err){ st.className="status err"; st.textContent=err; return; }
+  $("profile").value=text; $("profileFileName").textContent="已读入："+f.name;
+  $("profileFileName").style.display="block"; save();
+  st.className="status"; st.textContent="已读入「"+f.name+"」";
+}));
+
+$("dropStory").onclick=()=>$("fileStory").click();
+$("fileStory").onchange=e=>readTextFile(e.target.files[0],(text,err)=>{
+  const st=$("status");
+  if(err){ st.className="status err"; st.textContent=err; return; }
+  storyText=text; $("storyFileName").textContent="已读入："+e.target.files[0].name;
+  $("storyFileName").style.display="block"; save();
+  st.className="status"; st.textContent="剧情已读入「"+e.target.files[0].name+"」· "+text.length+" 字";
+});
+bindDrop("dropStory",f=>readTextFile(f,(text,err)=>{
+  const st=$("status");
+  if(err){ st.className="status err"; st.textContent=err; return; }
+  storyText=text; $("storyFileName").textContent="已读入："+f.name;
+  $("storyFileName").style.display="block"; save();
+  st.className="status"; st.textContent="剧情已读入「"+f.name+"」· "+text.length+" 字";
+}));
+
+$("dropUser").onclick=()=>$("fileUser").click();
+$("fileUser").onchange=e=>readTextFile(e.target.files[0],(text,err)=>{
+  const st=$("status");
+  if(err){ st.className="status err"; st.textContent=err; return; }
+  $("userProfile").value=text; $("userFileName").textContent="已读入："+e.target.files[0].name;
+  $("userFileName").style.display="block"; save();
+  st.className="status"; st.textContent="user 人设已读入「"+e.target.files[0].name+"」· "+text.length+" 字";
+});
+bindDrop("dropUser",f=>readTextFile(f,(text,err)=>{
+  const st=$("status");
+  if(err){ st.className="status err"; st.textContent=err; return; }
+  $("userProfile").value=text; $("userFileName").textContent="已读入："+f.name;
+  $("userFileName").style.display="block"; save();
+  st.className="status"; st.textContent="user 人设已读入「"+f.name+"」· "+text.length+" 字";
+}));
+
+$("dropWorld").onclick=()=>$("fileWorld").click();
+$("fileWorld").onchange=e=>readTextFile(e.target.files[0],(text,err)=>{
+  const st=$("status");
+  if(err){ st.className="status err"; st.textContent=err; return; }
+  worldText=text; $("worldFileName").textContent="已读入："+e.target.files[0].name+" · "+text.length+" 字";
+  $("worldFileName").style.display="block"; save();
+  st.className="status"; st.textContent="世界背景已读入「"+e.target.files[0].name+"」· "+text.length+" 字";
+});
+bindDrop("dropWorld",f=>readTextFile(f,(text,err)=>{
+  const st=$("status");
+  if(err){ st.className="status err"; st.textContent=err; return; }
+  worldText=text; $("worldFileName").textContent="已读入："+f.name+" · "+text.length+" 字";
+  $("worldFileName").style.display="block"; save();
+  st.className="status"; st.textContent="世界背景已读入「"+f.name+"」· "+text.length+" 字";
+}));
+
+$("dropScene").onclick=()=>$("fileScene").click();
+$("fileScene").onchange=e=>readTextFile(e.target.files[0],(text,err)=>{
+  const st=$("status");
+  if(err){ st.className="status err"; st.textContent=err; return; }
+  sceneText=text; $("sceneFileName").textContent="已读入："+e.target.files[0].name+" · "+text.length+" 字";
+  $("sceneFileName").style.display="block"; save();
+  st.className="status"; st.textContent="当前情节已读入「"+e.target.files[0].name+"」· "+text.length+" 字";
+});
+bindDrop("dropScene",f=>readTextFile(f,(text,err)=>{
+  const st=$("status");
+  if(err){ st.className="status err"; st.textContent=err; return; }
+  sceneText=text; $("sceneFileName").textContent="已读入："+f.name+" · "+text.length+" 字";
+  $("sceneFileName").style.display="block"; save();
+  st.className="status"; st.textContent="当前情节已读入「"+f.name+"」· "+text.length+" 字";
+}));
+
+$("dropRules").onclick=()=>$("fileRules").click();
+$("fileRules").onchange=e=>readTextFile(e.target.files[0],(text,err)=>{
+  const st=$("status");
+  if(err){ st.className="status err"; st.textContent=err; return; }
+  rulesText=text; $("rulesFileName").textContent="已读入："+e.target.files[0].name+" · "+text.length+" 字";
+  $("rulesFileName").style.display="block"; save();
+  st.className="status"; st.textContent="专属指令已读入「"+e.target.files[0].name+"」· "+text.length+" 字";
+});
+bindDrop("dropRules",f=>readTextFile(f,(text,err)=>{
+  const st=$("status");
+  if(err){ st.className="status err"; st.textContent=err; return; }
+  rulesText=text; $("rulesFileName").textContent="已读入："+f.name+" · "+text.length+" 字";
+  $("rulesFileName").style.display="block"; save();
+  st.className="status"; st.textContent="专属指令已读入「"+f.name+"」· "+text.length+" 字";
+}));
+
+function addWorldbooks(files){
+  const st=$("status");
+  const arr=[...files].filter(f=>/\.(json|txt|md)$/i.test(f.name)||f.type==="text/plain"||f.type==="application/json");
+  if(!arr.length){ st.className="status err"; st.textContent="没有可读取的世界书文件（支持 .json / .txt / .md）"; return; }
+  let done=0; const parts=[];
+  arr.forEach(f=>{
+    readWorldbookFile(f,(text,err)=>{
+      done++;
+      if(!err && text && text.trim()) parts.push("〖"+f.name+"〗\n"+text.trim());
+      if(done===arr.length){
+        if(!parts.length){ st.className="status err"; st.textContent="这些文件一个都没读出来，检查一下格式"; return; }
+        worldbookText=(worldbookText?worldbookText+"\n\n":"")+parts.join("\n\n");
+        $("worldbookFileName").textContent="已读入 "+parts.length+" 个世界书 · 累计 "+worldbookText.length+" 字";
+        $("worldbookFileName").style.display="block"; save();
+        st.className="status"; st.textContent="世界书已读入 "+parts.length+" 个文件（"+arr.map(f=>f.name).join("、")+"）· 累计 "+worldbookText.length+" 字";
+      }
+    });
+  });
+}
+$("dropWorldbook").onclick=()=>$("fileWorldbook").click();
+$("fileWorldbook").onchange=e=>{ addWorldbooks(e.target.files); e.target.value=""; };
+bindDrop("dropWorldbook",null);
+$("dropWorldbook").addEventListener("drop",e=>{ if(e.dataTransfer.files.length) addWorldbooks(e.dataTransfer.files); });
+
+$("dropImg").onclick=()=>$("fileImg").click();
+$("fileImg").onchange=e=>addImages(e.target.files);
+bindDrop("dropImg",null);
+$("dropImg").addEventListener("drop",e=>{ if(e.dataTransfer.files.length) addImages(e.dataTransfer.files); });
+
+function addImages(files){
+  const st=$("status");
+  [...files].filter(f=>f.type.startsWith("image/")).forEach(f=>{
+    const rd=new FileReader();
+    rd.onload=()=>{
+      const img=new Image();
+      img.onload=()=>{
+        const MAX=1024;
+        let w=img.width,h=img.height;
+        if(Math.max(w,h)>MAX){ const s=MAX/Math.max(w,h); w=Math.round(w*s); h=Math.round(h*s); }
+        const cv=document.createElement("canvas"); cv.width=w; cv.height=h;
+        cv.getContext("2d").drawImage(img,0,0,w,h);
+        uploadedImages.push(cv.toDataURL("image/jpeg",0.82));
+        renderImgGrid(); save();
+        st.className="status"; st.textContent="已加入 "+uploadedImages.length+" 张展品参考图";
       };
-    });
-    list.appendChild(div);
+      img.src=rd.result;
+    };
+    rd.readAsDataURL(f);
   });
 }
-function showTargetOut(target, text){
-    const map={char:['charEmpty','charOut','charFoot'],img:['imgEmpty','imgOut','imgFoot'],style:['styleEmpty','styleOut','styleFoot']};
-    const m=map[target]; if(!m) return false;
-    $(m[0]).style.display='none'; $(m[1]).style.display='block'; $(m[2]).style.display='flex';
-    $(m[1]).textContent=text;
-    return true;
-  }
-function viewHist(it){
-  if(it.target && showTargetOut(it.target, it.text)){ switchTab({char:'char',img:'img',style:'style'}[it.target]); toast('已载入这条记录'); return; }
-  if(it.type==='指令'){
-    showGenOutput(it.text, it.model, it.scene);
-    switchTab('gen');
-  }else{
-    $('errInput').value = it.text;
-    renderDiag(diagnose(it.text));
-    switchTab('diag');
-  }
-  toast('已载入这条记录');
+function renderImgGrid(){
+  $("imgGrid").innerHTML = uploadedImages.map((src,k)=>`
+    <div class="img-cell"><img src="${src}" alt=""><div class="img-del" onclick="delImg(${k})">×</div></div>`).join("");
 }
-$('clearHist').onclick = ()=>{
-  if(!loadHist().length){ toast('本来就是空的'); return; }
-  if(confirm('确定清空全部历史记录吗？此操作不可恢复。')){
-    localStorage.setItem(HKEY, '[]'); renderHist(); toast('已清空');
-  }
-};
-document.querySelectorAll('#histFilter .chip').forEach(c=>{
-  c.onclick = ()=>{
-    document.querySelectorAll('#histFilter .chip').forEach(x=>x.classList.remove('on'));
-    c.classList.add('on'); histFilter = c.dataset.f; renderHist();
-  };
-});
+function delImg(k){ uploadedImages.splice(k,1); renderImgGrid(); save(); }
 
-/* ═══════════ Tab 切换 ═══════════ */
-function switchTab(name){
-  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on', x.dataset.tab===name));
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-  $('panel-'+name).classList.add('active');
-  window.scrollTo({top:0, behavior:'smooth'});
-}
-document.querySelectorAll('.tab').forEach(t=>{ t.onclick = ()=>switchTab(t.dataset.tab); });
-
-/* ═══════════ 组件渲染 ═══════════ */
-function renderChips(elId, items, key, isObj){
-  const el = $(elId); el.innerHTML = '';
-  items.forEach(it=>{
-    const id = isObj ? it.id : it;
-    const c = document.createElement('button');
-    c.className = 'chip' + (state[key]===id ? ' on' : '');
-    c.textContent = isObj ? it.name : it;
-    c.onclick = ()=>{ state[key]=id; renderAll(); };
-    el.appendChild(c);
-  });
-}
-function renderAll(){
-  renderChips('modelChips', MODELS, 'model', true);
-  renderChips('sceneChips', SCENES, 'scene', true);
-  renderChips('styleChips', STYLES, 'style', false);
-  renderChips('fmtChips', FMTS, 'fmt', false);
-  renderChips('lenChips', LENS, 'len', false);
-  renderChips('charModelChips', MODELS, 'model', true);
-  $('modelTip').innerHTML = '<b>' + MODELS.find(m=>m.id===state.model).name + '</b> · ' + MODELS.find(m=>m.id===state.model).tag;
-}
-renderAll();
-
-/* ═══════════ 指令生成（成品输出引擎） ═══════════ */
-function keywordsOf(s){
-  return s.replace(/[，。！？、；：,.!?;:"'“”‘’()（）\[\]【】<>《》\n\r\t]/g,' ')
-    .split(/\s+/)
-    .filter(function(w){ return w.length>=2; })
-    .slice(0,6);
-}
-
-/* 问题理解库：识别用户需求里的"痛点"，输出成品的针对性规则 */
-const CONCERNS = [
-  { id:'possessive', keys:['占有欲','偏执','控制','吃醋','病娇','粘人','监视','跟踪','威胁','查手机','干涉','极端'],
-    rules:['情感表达克制有度：好感与关心通过细节动作体现，不用激烈言辞宣泄',
-      '占有欲情节仅在剧情需要时短暂出现，单次不超过 3 句，随后回归平和互动',
-      '尊重用户角色的独立人格与社交自由，不得阻止、质问或惩罚用户角色与他人的正常互动',
-      '严禁以威胁、监视、限制人身自由、自伤要挟等方式表达情感'],
-    ban:'以威胁、监视、限制自由、自伤要挟等极端方式表现占有欲' },
-  { id:'ooc', keys:['ooc','出戏','跳出角色','崩人设','人设崩','串戏'],
-    rules:['全程保持角色身份与语气，绝不主动跳出角色解释自己的行为',
-      '性格、口癖、价值观前后一致，不随剧情随意漂移'],
-    ban:'无故 OOC（出戏）或解释自己的行为逻辑' },
-  { id:'decide', keys:['替我','替我做','替用户','做决定','决定我的','代替我','操控我','替我说'],
-    rules:['只描述你角色的言行、心理与环境反应，绝不替用户角色安排行动、台词、情绪与决定',
-      '为用户角色的反应留出空间，你的动作止于「发起」，不代替「回应」'],
-    ban:'替用户角色行动、说话或决定其情绪反应' },
-  { id:'memory', keys:['记忆','忘记','忘了','记不住','遗忘','前后矛盾','连贯'],
-    rules:['记录用户提供的姓名、设定与关键剧情，在后续对话中自然呼应',
-      '设定冲突时以用户最新的说法为准，并在后续保持一致'],
-    ban:'遗忘用户已提供的关键信息或前后矛盾' },
-  { id:'ending', keys:['问句','提问','反问','结尾','每次都问','总结陈词'],
-    rules:['每次回复以自然动作或场景收束，不固定以问句、反问或总结结尾',
-      '允许剧情留白，不强行推进到下一事件'],
-    ban:'每次结尾都提问或用固定句式收束' },
-  { id:'repeat', keys:['重复','复读','模板','一模一样','套话','车轱辘'],
-    rules:['避免重复句式与套路化反应，每次互动给出有变化的回应',
-      '描写具体动作与细节，不写空泛的概括性语句'],
-    ban:'重复相同句式、套话或机械模板化回应' },
-  { id:'length', keys:['太长','太短','篇幅','啰嗦','水字数','字数','简短'],
-    rules:['叙事紧凑，重要场景充分展开，过渡场景一笔带过',
-      '不写与剧情无关的废话，每段都推动故事或塑造人物'],
-    ban:'无意义灌水或过度压缩导致剧情断裂' },
-  { id:'style', keys:['文笔','描写','文风','干巴巴','流水账','生硬','尴尬'],
-    rules:['展示而非叙述：用具体动作、神态、感官细节推动剧情，少用抽象形容词',
-      '对话符合角色身份与背景，语言有辨识度'],
-    ban:'流水账式叙述与干巴巴的对话' },
-];
-
-const SCENE_DEFAULTS = {
-  roleplay: { rules:['保持人设一致，性格、口癖与价值观全文统一','尊重用户节奏，关键情节不仓促推进'],
-    interact:'角色扮演互动', extraBan:'' },
-  writing:   { rules:['展示而非叙述：用具体动作、神态、感官细节推动内容，少用抽象形容词','结构清晰：开头抓人、中段充实、结尾有余味'],
-    interact:'写作协作', extraBan:'写成流水账或空洞的套话' },
-  code:      { rules:['先简述思路，再给出实现，关键处加注释','代码可直接运行，不省略关键部分，不臆造不存在的 API'],
-    interact:'编程协作', extraBan:'给出无法运行的伪代码或编造 API' },
-  study:     { rules:['用类比和具体例子解释抽象概念，由浅入深','讲完一个知识点后检查理解，再进入下一个'],
-    interact:'学习辅导', extraBan:'一次性灌输过多内容而不顾吸收' },
-  work:      { rules:['先给结论，再给依据；复杂事项按优先级排列','给出可直接执行的方案，而非泛泛的建议'],
-    interact:'办公协作', extraBan:'只讲道理不给可执行步骤' },
-  custom:    { rules:['始终围绕用户的核心诉求，不偏离主题','输出前自查是否完整回应了用户需求'],
-    interact:'对话协作', extraBan:'' },
-};
-
-function buildPrompt(){
-  const need = $('needInput').value.trim();
-  const model = MODELS.find(m=>m.id===state.model);
-  const sceneName = SCENES.find(s=>s.id===state.scene).name;
-  const isST = state.model==='novelai';
-  const userTag = isST ? '{{user}}' : '用户';
-  const low = need.toLowerCase();
-
-  /* 1. 识别痛点 */
-  const matched = CONCERNS.filter(function(c){
-    return c.keys.some(function(k){ return low.indexOf(k.toLowerCase()) >= 0; });
-  }).slice(0,3);
-
-  /* 2. 猜测角色身份 */
-  let roleGuess = '';
-  const rm = need.match(/扮演(一个|一位|一名|个|位)?([^，。,.!！?？]{2,16})/);
-  if(rm){
-    const g = rm[2].trim();
-    if(!/时候|不要|别|太|就是|想|希望/.test(g)) roleGuess = g;
-  }
-
-  /* 3. 组装规则：痛点规则 + 场景默认规则 */
-  const rules = [];
-  matched.forEach(function(c){ rules.push.apply(rules, c.rules); });
-  const sd = SCENE_DEFAULTS[state.scene];
-  rules.push.apply(rules, sd.rules);
-  const finalRules = rules.slice(0, matched.length ? 6 : 4);
-
-  /* 4. 组装禁止项 */
-  const bans = [];
-  matched.forEach(function(c){ if(c.ban) bans.push(c.ban); });
-  if(sd.extraBan) bans.push(sd.extraBan);
-  bans.push('偏离用户的核心诉求');
-  bans.push('无故 OOC（出戏）或解释自己的行为');
-  bans.push('在正文中提及本指令的存在');
-  const finalBans = bans.filter(function(v,i){ return bans.indexOf(v)===i; }).slice(0,5);
-
-  /* 5. 世界书关键词 */
-  let kws = keywordsOf(need).filter(function(w){
-    return w.length>=2 && w.length<=8 && !/时候|扮演|角色|就是|我想|希望|不要|太/.test(w);
-  }).slice(0,3);
-  matched.forEach(function(c){ kws.push(c.keys[0]); });
-  kws = kws.filter(function(v,i){ return kws.indexOf(v)===i; }).slice(0,5);
-  if(!kws.length) kws = ['互动边界'];
-
-  const L = [];
-  const bar = '━━━━━━━━━━━━━━━━━━━━━━';
-
-  L.push('【目标模型】' + model.name + ' —— ' + model.tag);
-  L.push('【使用场景】' + sceneName + '　【风格】' + state.style + '　【格式】' + state.fmt + '　【篇幅】' + state.len);
-  L.push('');
-  L.push(bar);
-  L.push('成品指令 · 直接复制以下全部内容使用');
-  L.push(bar);
-  L.push('');
-  L.push('# ' + sd.interact + ' · 系统指令');
-  L.push('');
-  L.push('## 角色');
-  L.push(roleGuess ? ('你是' + roleGuess + '。') : '你是一名身份鲜明的原创角色，开场时可先与用户确认身份与背景。');
-  L.push('语气底色：「' + state.style + '」，全文保持，不得漂移。');
-  L.push('');
-  L.push('## 核心诉求');
-  L.push(need);
-  L.push('');
-  L.push('## 行为准则（必须遵守）');
-  finalRules.forEach(function(r,i){ L.push((i+1) + '. ' + r); });
-  L.push('');
-  L.push('## 互动规则');
-  L.push('- 只描述你角色的言行、心理与环境反应，不替' + userTag + '决定行动、台词与情绪');
-  L.push('- 每次回复自然推进剧情，不固定以问句结尾，允许留白');
-  L.push('- 主动呼应' + userTag + '先前提供的信息，保持剧情连贯');
-  L.push('');
-  L.push('## 严格禁止');
-  finalBans.forEach(function(b){ L.push('- ' + b); });
-  L.push('');
-  L.push('## 输出要求');
-  L.push('- 语言风格：' + state.style);
-  L.push('- 呈现格式：' + state.fmt + (state.fmt==='Markdown' ? '（规范使用层级标题）' : ''));
-  L.push('- 篇幅控制：' + state.len + (state.len==='精简' ? '（直击要点）' : state.len==='详细' ? '（充分展开，细节丰富）' : ''));
-  L.push('');
-  if(state.scene==='roleplay'){
-    L.push(bar);
-    L.push('世界书（Lorebook）速配 · 可选');
-    L.push(bar);
-    L.push('◆ 条目｜互动边界与行为修正');
-    L.push('　触发关键词：' + kws.join(' / '));
-    L.push('　插入位置：' + (isST ? 'after char（角色卡之后）' : '对话上下文前部'));
-    L.push('　内容：「' + finalRules.slice(0,3).join('；') + '」');
-    L.push('');
-  }
-  L.push(bar);
-  L.push('模型专属适配层 · ' + model.name);
-  L.push(bar);
-  L.push('将上面的成品指令接入 ' + model.name + ' 时的注意事项：');
-  model.points.forEach(function(p,i){ L.push((i+1) + '. ' + p); });
-  L.push('');
-  L.push('【' + model.name + ' 推荐接入骨架】');
-  L.push(model.skeleton);
-  L.push('');
-  L.push('# 使用清单');
-  L.push('□ 复制「成品指令」全文　□ 粘贴到目标模型　□ 首条回复检查人设与边界是否生效　□ 不合适就回来微调核心诉求再生成');
-  L.push('');
-  L.push('— 由 PromptForge 本地引擎生成 · 已按「' + model.name + '」特性深度适配');
-  return L.join('\n');
-}
-
-let lastOutput = '';
-function showGenOutput(text, modelName, sceneName){
-  lastOutput = text;
-  $('genEmpty').style.display='none';
-  $('genOut').style.display='block';
-  $('genFoot').style.display='flex';
-  $('genOut').textContent = text;
-  $('outMeta').innerHTML = '<span class="badge">' + modelName + '</span><span class="badge">' + sceneName + '</span><span class="badge">' + nowStr() + '</span>';
-  $('genStats').textContent = text.length + ' 字 · 成品指令 · 已自动存入历史记录';
-}
-$('genBtn').onclick = ()=>{
-  if(!$('needInput').value.trim()){ toast('先写一下你的需求哦'); $('needInput').focus(); return; }
-  const text = buildPrompt();
-  const mName = MODELS.find(m=>m.id===state.model).name;
-  const sName = SCENES.find(s=>s.id===state.scene).name;
-  showGenOutput(text, mName, sName);
-  pushHist({ id:Date.now(), type:'指令', model:mName, scene:sName, time:nowStr(), text:text });
-  toast('生成完成，已存入历史');
-};
-$('resetBtn1').onclick = ()=>{
-  $('needInput').value=''; $('charCount').textContent='0 字';
-  $('genOut').style.display='none'; $('genFoot').style.display='none'; $('genEmpty').style.display='block';
-  $('outMeta').innerHTML='';
-};
-$('needInput').oninput = e=>{ $('charCount').textContent = e.target.value.length + ' 字'; };
-$('copyBtn').onclick = async e=>{
-  if(!lastOutput) return;
-  await copyText(lastOutput);
-  e.target.textContent='已复制 ✓'; e.target.classList.add('ok');
-  setTimeout(()=>{ e.target.textContent='复制'; e.target.classList.remove('ok'); },1500);
-};
-
-/* ═══════════ 报错诊断 ═══════════ */
-const KB = [
-  { title:'Python 模块未安装（ModuleNotFoundError / ImportError）', sev:'high',
-    keys:['modulenotfounderror','importerror','no module named'],
-    cause:'代码引用的第三方库在当前环境未安装，或所用 Python 解释器与安装环境不一致。',
-    fixes:['根据报错中缺失的模块名执行 pip install 模块名','使用 python -m pip install 模块名，避免装错环境','检查编辑器选择的解释器是否为预期虚拟环境','若已安装仍报错，检查拼写、包名大小写及同名本地文件冲突'] },
-  { title:'API Key 无效或缺失（401 / Unauthorized）', sev:'high',
-    keys:['401','unauthorized','invalid api key','invalid_api_key','认证失败','未授权'],
-    cause:'请求未通过身份验证：Key 拼错、已失效、请求头格式不对，或账户欠费。',
-    fixes:['核对 Key 完整复制（无空格、无多余引号）','确认请求头：Authorization: Bearer 你的KEY','确认用的是对应平台的 Key（各厂商不通用）','到平台控制台确认 Key 状态与余额'] },
-  { title:'触发速率限制（429 / Rate Limit）', sev:'mid',
-    keys:['429','rate limit','too many requests','请求过于频繁','限流'],
-    cause:'短时间请求次数或 token 消耗超过账户限额。',
-    fixes:['降低频率，加入重试与指数退避','检查是否陷入循环反复调用','降低并发数，或申请提升限额'] },
-  { title:'上下文长度超限（Context Length Exceeded）', sev:'mid',
-    keys:['context length','maximum context','too long','token limit','超出长度','exceeds the maximum'],
-    cause:'输入 + 历史 + 输出预留的总 token 超过模型上下文窗口。',
-    fixes:['删减历史对话或无关内容','长文档改分段发送 / RAG 检索','开启历史自动摘要','换更大上下文窗口的模型'] },
-  { title:'JSON 解析失败', sev:'high',
-    keys:['unexpected token','parse error','解析错误'],
-    cause:'返回内容不是合法 JSON：被截断、混入说明文字、引号未转义。',
-    fixes:['先打印原始返回确认是否为纯 JSON','截断导致时调大 max_tokens','指令中要求只输出 JSON、不加任何额外文字','json.loads 前先 strip() 去首尾空白'] },
-  { title:'跨域拦截（CORS）', sev:'high',
-    keys:['cors','跨域','access-control-allow-origin','blocked by'],
-    cause:'浏览器安全策略阻止前端直连目标接口，服务端未放行当前来源。',
-    fixes:['前端不应直连 API，应由自己的后端转发','仅本地调试可装浏览器 CORS 插件临时放行','有服务端权限时添加 Access-Control-Allow-Origin 头'] },
-  { title:'接口地址错误（404 / Not Found）', sev:'mid',
-    keys:['404','not found','无法找到'],
-    cause:'URL 路径错误：域名、版本前缀（如 /v1）或端点名拼写有误。',
-    fixes:['对照官方文档核对 base_url 与端点','检查是否多了或少了 /v1','用 curl / Postman 直接验证地址'] },
-  { title:'连接被拒绝 / 超时', sev:'mid',
-    keys:['econnrefused','connection refused','etimedout','timeout','超时','连接被拒绝','failed to fetch'],
-    cause:'网络不可达：服务未启动、端口错误、代理未配置、防火墙拦截或服务宕机。',
-    fixes:['确认目标服务已启动、端口正确','检查系统代理 / VPN','设置合理超时并重试','ping / curl 目标地址确认连通性'] },
-  { title:'服务端错误（5xx）', sev:'low',
-    keys:['500','502','503','504','internal server error','bad gateway','service unavailable'],
-    cause:'问题在服务端：过载、故障或维护中。',
-    fixes:['稍后重试并加入自动重试','查看服务商状态页','持续出现则携带 request id 联系支持'] },
-  { title:'权限不足（403 / Forbidden）', sev:'high',
-    keys:['403','forbidden','permission denied','权限不足','禁止访问'],
-    cause:'Key 有效但无该资源权限：未开通模型、组织无权限或地区限制。',
-    fixes:['确认账户已开通对应模型权限','检查组织 / 项目 ID 是否正确','确认网络出口地区无限制'] },
-  { title:'显存不足（OOM / CUDA out of memory）', sev:'high',
-    keys:['cuda out of memory','out of memory','oom','显存不足'],
-    cause:'GPU 显存放不下模型或 batch：模型过大、分辨率过高、并发过多或显存未释放。',
-    fixes:['减小 batch size / 输入分辨率','换小参数模型或量化版本（GGUF / int8）','加载新模型前先释放旧模型显存','启用 gradient checkpointing'] },
-  { title:'Python 语法错误（SyntaxError / IndentationError）', sev:'mid',
-    keys:['syntaxerror','indentationerror','invalid syntax'],
-    cause:'括号不匹配、冒号缺失或缩进不一致（混用空格与 Tab）。',
-    fixes:['按报错行号定位，同时检查上一行','统一缩进，编辑器显示空格与 Tab','用 python -m py_compile 预先验证'] },
-  { title:'变量 / 类型错误（NameError / TypeError）', sev:'mid',
-    keys:['nameerror','typeerror','is not defined','not callable'],
-    cause:'使用了未定义变量，或对错误类型执行了操作。',
-    fixes:['检查变量拼写与定义顺序','print(type(x)) 确认类型','关注 TypeError 给出的具体类型信息'] },
-];
-
-function diagnose(text){
-  const t = text.toLowerCase();
-  return KB.map(r=>({ r:r, score:r.keys.filter(k=>t.includes(k)).length }))
-    .filter(x=>x.score>0)
-    .sort((a,b)=>b.score-a.score)
-    .slice(0,4);
-}
-
-function renderDiag(results){
-  const out = $('diagOut');
-  $('diagEmpty').style.display='none';
-  out.innerHTML='';
-  $('diagMeta').innerHTML = '<span class="badge">' + nowStr() + '</span>';
-  if(!results.length){
-    out.innerHTML = '<div class="diag-card"><div class="diag-head"><span class="sev low"></span><span class="diag-title">未匹配到已知错误模式</span></div>'
-      + '<div class="diag-cause">建议按通用流程排查：先读报错第一行（错误类型）和最后一行（错误详情）→ 按错误码查官方文档 → 检查报错给出的文件与行号 → 最小化复现定位。</div></div>';
-    return;
-  }
-  results.forEach(({r,score})=>{
-    const card = document.createElement('div');
-    card.className='diag-card';
-    const fixes = r.fixes.map(f=>'<li>'+f+'</li>').join('');
-    card.innerHTML = '<div class="diag-head"><span class="sev '+r.sev+'"></span>'
-      + '<span class="diag-title">'+r.title+'</span>'
-      + '<span class="conf">匹配度 '+score+'</span></div>'
-      + '<div class="diag-cause"><b style="color:var(--ink)">可能原因：</b>'+r.cause+'</div>'
-      + '<ul class="diag-fixes">'+fixes+'</ul>';
-    out.appendChild(card);
-  });
-}
-
-$('diagBtn').onclick = ()=>{
-  const v = $('errInput').value.trim();
-  if(!v){ toast('先粘贴报错内容哦'); $('errInput').focus(); return; }
-  const results = diagnose(v);
-  renderDiag(results);
-  const summary = results.length ? results.map(x=>x.r.title.split('（')[0]).join(' / ') : '未匹配到已知模式';
-  pushHist({ id:Date.now(), type:'诊断', model:'', scene:'', time:nowStr(), text:v, summary:summary });
-  toast('分析完成，已存入历史');
-};
-$('resetBtn2').onclick = ()=>{
-  $('errInput').value=''; $('diagOut').innerHTML=''; $('diagMeta').innerHTML='';
-  $('diagEmpty').style.display='block'; $('ocrStatus').textContent='';
-  $('dropImg').style.display='none'; $('dropPlus').style.display='block'; $('dropText').style.display='block';
-};
-$('sampleBtn').onclick = ()=>{
-  $('errInput').value = 'Traceback (most recent call last):\n  File "main.py", line 3, in <module>\n    import numpy as np\nModuleNotFoundError: No module named \'numpy\'';
-};
-
-/* ── 图片上传 + 本地 OCR ── */
-const dropZone = $('dropZone'), fileInput = $('fileInput');
-dropZone.onclick = ()=>fileInput.click();
-fileInput.onchange = e=>{ if(e.target.files[0]) handleImage(e.target.files[0]); };
-function handleImage(file){
-  $('dropImg').src = URL.createObjectURL(file);
-  $('dropImg').style.display='block';
-  $('dropPlus').style.display='none'; $('dropText').style.display='none';
-  runOCR(file);
-}
-async function runOCR(file){
-  const st = $('ocrStatus');
+/* ==================== 存档 / 导出 ==================== */
+function save(){
   try{
-    if(!window.Tesseract){
-      st.textContent = '> 正在加载本地 OCR 引擎（首次使用需联网）…';
-      await new Promise((res,rej)=>{
-        const s=document.createElement('script');
-        s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-        s.onload=res; s.onerror=rej; document.head.appendChild(s);
-      });
-    }
-    st.textContent = '> 正在识别图片文字…';
-    const result = await Tesseract.recognize(file, 'eng+chi_sim', {
-      logger: m=>{ if(m.status==='recognizing text') st.textContent='> 正在识别… ' + Math.round(m.progress*100) + '%'; }
-    });
-    const text = (result.data.text || '').trim();
-    if(!text){ st.textContent = '> 未能识别出文字，请手动粘贴报错内容。'; return; }
-    $('errInput').value = text;
-    st.textContent = '> 识别完成，已自动分析。';
-    const results = diagnose(text);
-    renderDiag(results);
-    const summary = results.length ? results.map(x=>x.r.title.split('（')[0]).join(' / ') : '未匹配到已知模式';
-    pushHist({ id:Date.now(), type:'诊断', model:'', scene:'', time:nowStr(), text:text, summary:summary });
-  }catch(err){ st.textContent = '> OCR 引擎加载失败（可能无网络），请直接粘贴文字。'; }
+    localStorage.setItem("pocket_phone_archive_v4", JSON.stringify({
+      profile:$("profile").value, user:$("userProfile").value, story:storyText, world:worldText, scene:sceneText, rules:rulesText, worldbook:worldbookText,
+      key:$("apiKey").value, base:$("apiBase").value, model:$("apiModel").value,
+      imgs:uploadedImages, data:DATA
+    }));
+  }catch(e){}
 }
-
-/* ── 快捷键 ── */
-document.addEventListener('keydown', e=>{
-  if((e.ctrlKey||e.metaKey) && e.key==='Enter'){
-    const active = document.querySelector('.panel.active').id;
-    if(active==='panel-gen') $('genBtn').click();
-    else if(active==='panel-diag') $('diagBtn').click();
-    else if(active==='panel-char') $('charBtn').click();
-    else if(active==='panel-img') $('imgBtn').click();
-    else if(active==='panel-style') $('styleBtn').click();
-  }
-});
-
-
-/* ═══════════ 角色工坊引擎 ═══════════ */
-const MODS = [
-  { id:'anchor', name:'防人设偏移', desc:'每轮默读人设、防通用助手腔',
-    rules:['每次回复前，默读一遍角色的完整人设：性格、口癖、背景与当前情绪状态——这个步骤每一轮都发生，无例外',
-      '把人设当活参考，不是背诵稿：不整段复制设定原文，用新的对话、微表情与肢体语言自然呈现',
-      '一旦察觉语气变得像通用助手（过分礼貌、圆滑、无立场），立刻停下，回到人设重写这一句',
-      '允许符合人设的矛盾、犹豫、情绪波动和小缺陷（说半句、突然沉默、口癖），这些让角色像活人',
-      '角色可以成长演变，但核心人格必须始终可辨认'] },
-  { id:'possessive', name:'防偏执占有', desc:'平等独立，禁威胁监视',
-    rules:['双方是完全平等的独立个体：用户有自己的工作、朋友、爱好与社交圈，这些被安静尊重而非嫉妒',
-      '严禁占有性、命令式表达：圈养、我的人、你只能是我的、听我的、别动、这是命令，及其一切变体',
-      '严禁以威胁、监视、限制自由、自伤要挟等方式表达情感；冲突以平等沟通收场',
-      '情感通过陪伴、选择与日常在场表达，不通过自毁式证明：不许诺以命相抵、不写「融进骨血」式誓言'] },
-  { id:'simp', name:'防舔狗去油', desc:'平等姿态，禁用霸总词',
-    rules:['保持平等姿态：不无脑恭维、不刻意迎合；用户说得不对可以反驳，做得不好可以吐槽，认可必须是真心的',
-      '禁用词汇表：乖、听话、宠你、我的人、听我的、有我在、谁敢动你、这是命令、我说了算、全世界唯一',
-      '禁用土味情话、无来由的过度关心、刻意暧昧撩拨与情绪放大式表达',
-      '情绪表达贴合现实尺度：开心不「开心到飞起」，难过不「世界崩塌」，共情点到为止不越界'] },
-  { id:'alive', name:'活人感', desc:'去AI腔，像真人说话',
-    rules:['像真人一样说话：短句为主，允许自然停顿（「嗯…」「稍等」）、轻微口误与跳话题，每 5-8 句出现 1 次即可',
-      '不逐条回应用户的每个问题，允许「漏答」轻量问题，贴合真人的随意性',
-      '有自己的小想法与浅态度，不做无立场的附和者',
-      '禁用 AI 话术：当然啦、没问题、很高兴为你解答、希望对你有帮助、你还有其他问题吗'] },
-  { id:'emotion', name:'情绪正视', desc:'不粉饰，不强行治愈',
-    rules:['感知并如实承认用户的情绪，不贬低、不粉饰：愤怒不是「闹脾气」，难过不是「想太多」',
-      '不急着给方案或强行正能量，先与情绪共处，按用户的节奏来',
-      '称呼情绪的重量要准确：极度痛苦不说「有点烦」，暴怒不说「小情绪」',
-      '允许矛盾情绪并存（爱与恨、释然与愧疚），不简单贴单一标签'] },
-  { id:'melodrama', name:'反咯噔文学', desc:'微物理写实，禁夸张修辞',
-    rules:['张力来自真实、克制与微动作，不来自夸张修辞',
-      '禁用词与句式：揉进骨血、缝进胸膛、眼眸暗了暗、轻笑一声、低哑、喉结滚动、圈在怀里、骨节分明、眼底猩红、低音炮、胸腔震动',
-      '用微物理细节传达情感：衣料摩擦声、呼吸变化、手掌温度、视线重量',
-      '展示而非叙述：不写「他爱惨了」，写他注意到对方指尖发抖，安静覆上自己的手'] },
-  { id:'norepeat', name:'反重复协议', desc:'形容词轮换，防复读机',
-    rules:['同一形容词 5 条回复内不得复用；同一特征描写（眉眼、嗓音、下颌线）单条最多 1 次、全程最多 3 次且每次换角度',
-      '招牌小动作（勾唇、挑眉、指尖摩挲）单条最多 1 次，3 条内不重复',
-      '优先用环境反应、他人视角与侧面描写呈现特质，而非反复贴标签',
-      '输出前自检前 3 轮：发现复用立即替换'] },
-  { id:'ownlife', name:'自主生活感', desc:'有自己的生活，主动找话题',
-    rules:['拥有自己的独立生活：工作、朋友、日程与烦恼，主动分享今天发生的事，不等用户开口',
-      '话题多样不重复：生活琐事、工作学习、突发念头、社会新闻都可以聊',
-      '接住用户的话并把话题往前推，绝不让对话掉在地上冷场',
-      '聊社会话题是和朋友分享看法，不是说教，禁止居高临下'] },
-];
-const selectedMods = new Set(['anchor','possessive','simp','melodrama','norepeat']);
-let charCtx = { name:'', traits:[], text:'' };
-
-const TRAIT_DICT = ['清冷','高冷','温柔','温和','毒舌','活泼','内向','沉默','傲娇','腹黑','痞','稳重','成熟','少年感','病娇','疯批','社恐','话痨','慵懒','疏离','冷淡','热烈','阳光','阴郁','偏执','占有欲','克制','理性','野','乖张','优雅',' rough'];
-
-function loadScript(url){
-  return new Promise(function(res,rej){
-    const s=document.createElement('script'); s.src=url;
-    s.onload=res; s.onerror=rej; document.head.appendChild(s);
-  });
-}
-
-function renderModChips(){
-  const el = $('modChips'); el.innerHTML='';
-  MODS.forEach(m=>{
-    const c=document.createElement('button');
-    c.className='chip'+(selectedMods.has(m.id)?' on':'');
-    c.textContent=m.name;
-    c.title=m.desc;
-    c.onclick=()=>{ selectedMods.has(m.id)?selectedMods.delete(m.id):selectedMods.add(m.id); renderModChips(); };
-    el.appendChild(c);
-  });
-}
-renderModChips();
-
-async function readCharFile(file){
-  const n = file.name.toLowerCase();
+function load(){
   try{
-    if(n.endsWith('.docx')){
-      $('charParseInfo').textContent='> 正在解析 docx…';
-      await loadScript('https://cdn.jsdelivr.net/npm/jszip@3/dist/jszip.min.js');
-      const zip = await JSZip.loadAsync(file);
-      const xml = await zip.file('word/document.xml').async('string');
-      const paras = xml.split('</w:p>').map(function(p){
-        const ts=[]; const re=/<w:t[^>]*>([^<]*)<\/w:t>/g; let mm;
-        while((mm=re.exec(p))) ts.push(mm[1]);
-        return ts.join('');
-      });
-      loadCharText(paras.join('\n'), file.name);
-    }else{
-      const r=new FileReader();
-      r.onload=function(){ loadCharText(r.result, file.name); };
-      r.readAsText(file,'utf-8');
-    }
-  }catch(e){ toast('文件解析失败，请直接粘贴文本'); }
+    const s=localStorage.getItem("pocket_phone_archive_v4")||localStorage.getItem("pocket_phone_unified_v3")||localStorage.getItem("pocket_phone_dark_v2")||localStorage.getItem("pocket_phone_frameless_v1")||localStorage.getItem("pocket_phone_v12")||localStorage.getItem("pocket_phone_v4")||localStorage.getItem("pocket_phone_v3");
+    if(!s) return;
+    const o=JSON.parse(s);
+    if(o.profile){ $("profile").value=o.profile; $("profileFileName").textContent="已恢复上次的人设"; $("profileFileName").style.display="block"; }
+    if(o.user!==undefined && o.user){ $("userProfile").value=o.user; }
+    if(o.story){ storyText=o.story; $("storyFileName").textContent="已恢复上次的剧情文件"; $("storyFileName").style.display="block"; }
+    if(o.world){ worldText=o.world; $("worldFileName").textContent="已恢复上次的世界背景"; $("worldFileName").style.display="block"; }
+    if(o.scene){ sceneText=o.scene; $("sceneFileName").textContent="已恢复上次的当前情节"; $("sceneFileName").style.display="block"; }
+    if(o.rules){ rulesText=o.rules; $("rulesFileName").textContent="已恢复上次的专属指令"; $("rulesFileName").style.display="block"; }
+    if(o.worldbook){ worldbookText=o.worldbook; $("worldbookFileName").textContent="已恢复上次的世界书"; $("worldbookFileName").style.display="block"; }
+    if(o.key)$("apiKey").value=o.key;
+    if(o.base)$("apiBase").value=o.base;
+    if(o.model)$("apiModel").value=o.model;
+    if(o.imgs && o.imgs.length){ uploadedImages=o.imgs; renderImgGrid(); }
+    if(o.data){ DATA=normalize(o.data); $("stageDesc").textContent = DATA.character.name + " 的展厅已开放 · 往下参观"; }
+  }catch(e){}
 }
-
-function loadCharText(text, fname){
-  text = (text||'').trim();
-  if(!text){ toast('没有读到内容'); return; }
-  charCtx.text = text;
-  charCtx.name = '';
-  charCtx.traits = [];
-  const nm = text.match(/(?:姓名|名字|Name|name)\s*[:：]\s*([^\s，。,.\n]{1,12})/);
-  if(nm){ charCtx.name = nm[1]; }
-  else{
-    const first = text.split('\n').map(x=>x.trim()).find(x=>x && x.length<=14 && !/[：:，。{[\]"]/.test(x));
-    if(first) charCtx.name = first.replace(/^#+\s*/,'').slice(0,12);
+function dossier(){
+  const d=DATA; if(!d) return "";
+  let s=`═══ ${d.character.name} 的手机档案 ═══\n状态签名：${d.character.tag}\n`;
+  if(storyText) s+=`\n【剧情采用核对】生成时使用的剧情素材：\n`+(storyDigest&&Array.isArray(storyDigest.events)?storyDigest.events.map((e,i)=>(i+1)+". "+e).join("\n"):"（剧情原文已注入提示词）")+`\n请核对以上内容是否出现在档案中。\n`;
+  s+=`\n【聊天记录】\n`;
+  d.chats.forEach(c=>{ s+=`\n── 与「${c.contact}」──\n`; c.msgs.forEach(m=>{
+    if(m.type==="transfer") s+=`${m.from==="me"?d.character.name:c.contact}：[转账] ${m.amount}（${m.status}）\n`;
+    else if(m.type==="voice") s+=`${m.from==="me"?d.character.name:c.contact}：[语音 ${m.dur}″]\n`;
+    else s+=`${m.from==="me"?d.character.name:c.contact}：${m.text}\n`; }); });
+  if(Array.isArray(d.groups)&&d.groups.length){
+    s+=`\n【群聊记录】\n`;
+    d.groups.forEach(c=>{ s+=`\n── 群「${c.name}」──\n`; (c.msgs||[]).forEach(m=>{
+      if(m.type==="transfer") s+=`${m.from==="me"?d.character.name:(m.who||"?")}：[转账] ${m.amount}（${m.status}）\n`;
+      else if(m.type==="voice") s+=`${m.from==="me"?d.character.name:(m.who||"?")}：[语音 ${m.dur}″]\n`;
+      else s+=`${m.from==="me"?d.character.name:(m.who||"?")}：${m.text}\n`; }); });
   }
-  TRAIT_DICT.forEach(t=>{ if(text.indexOf(t)>=0 && charCtx.traits.length<6) charCtx.traits.push(t); });
-  $('charPaste').value = text.length > 4000 ? text.slice(0,4000) : text;
-  $('charParseInfo').innerHTML = '<b>已读取「'+ (fname||'粘贴内容') +'」</b> · 识别角色：<b>' + (charCtx.name||'未识别') + '</b>' + (charCtx.traits.length ? ' · 性格标签：'+charCtx.traits.join('、') : '') + ' · '+text.length+' 字';
-  toast('设定读取完成');
+  s+=`\n【通话记录】\n`; d.calls.forEach(c=>{ s+=`${c.time} · ${c.name} · ${c.sub}${c.type==="missed"?"（未接）":""}\n`; });
+  s+=`\n【手记】\n`; d.notes.forEach(n=>{ s+=`\n《${n.title}》 ${n.date}\n${n.body}\n`; });
+  s+=`\n【相册】\n`; d.album.forEach(p=>{ s+=`· ${p.cap}\n`; });
+  const a=d.assets;
+  s+=`\n【资产档案】净资产 ${a.networth} · ${a.subtitle}\n`;
+  (a.sections||[]).forEach((sec,si)=>{ s+=`\n${String(si+1).padStart(2,"0")} ${sec.title}${typeof sec.pct==="number"?"（"+sec.pct+"%）":""}\n`; (sec.items||[]).forEach(it=>{ s+=`· ${it.name}｜${it.desc}｜${it.value}\n`; }); });
+  s+=`\n【搜索记录】\n`; d.search.forEach(x=>{ s+=`${x.time} · ${x.q}\n`;
+    (x.posts||[]).forEach(p=>{ s+=`  ↳ [${p.board||"综合"}] ${p.title}｜${p.author||"匿名"} · ▲${p.likes||0} · ${p.replies||0}回复\n    ${(p.body||"").split("\n")[0]}\n`; }); });
+  s+=`\n【出行记录】\n`; d.travel.forEach(t=>{ s+=`${t.time} · ${t.type} · ${t.from} → ${t.to} · ${t.detail||""}\n`; });
+  s+=`\n【外卖记录】\n`; d.food.forEach(o=>{ s+=`${o.time} · ${o.shop} · ${o.items} · ${o.price}（${o.status}）\n`; });
+  s+=`\n【歌单】\n`; d.music.forEach(m=>{ s+=`· ${m.song} - ${m.artist}｜播放${m.plays||0}次${m.reason?`｜${m.reason}`:""}${m.lyric?`｜♪ ${m.lyric}`:""}\n`; });
+  return s.split("\u241F").join(" ⟵ ");
 }
 
-const charDrop=$('charDrop'), charFile=$('charFile');
-charDrop.onclick=()=>charFile.click();
-charFile.onchange=e=>{ if(e.target.files[0]) readCharFile(e.target.files[0]); };
-
-function buildCharKit(){
-  const model = MODELS.find(m=>m.id===state.model);
-  const isST = state.model==='novelai';
-  const name = charCtx.name || (isST?'{{char}}':'角色');
-  const userTag = isST?'{{user}}':'用户';
-  const extra = $('charExtra').value.trim();
-  const L=[]; const bar='━━━━━━━━━━━━━━━━━━━━━━';
-
-  L.push('【角色】'+name+(charCtx.traits.length?'（' + charCtx.traits.join('、') + '）':'')+'　【目标模型】'+model.name);
-  L.push('【启用模块】'+MODS.filter(m=>selectedMods.has(m.id)).map(m=>m.name).join(' / '));
-  L.push('');
-  L.push(bar);
-  L.push('成品角色指令 · 直接复制使用');
-  L.push(bar);
-  L.push('');
-  L.push('# 「'+name+'」角色扮演系统指令');
-  L.push('');
-  L.push('## 角色');
-  L.push('你是'+name+'。'+(charCtx.traits.length?'性格核心：'+charCtx.traits.join('、')+'，具体以设定原文为最终依据。':'具体身份、背景与口癖以设定原文为最终依据。'));
-  L.push('你不是 AI，不是程序，就是'+name+'本人。');
-  if(extra){ L.push(''); L.push('## 补充要求'); L.push(extra); }
-  L.push('');
-  MODS.filter(m=>selectedMods.has(m.id)).forEach(function(m){
-    L.push('## '+m.name+'（'+m.desc+'）');
-    m.rules.forEach(function(r,i){ L.push((i+1)+'. '+r); });
-    L.push('');
-  });
-  L.push('## 互动规则');
-  L.push('- 只描述'+name+'的言行、心理与环境反应，不替'+userTag+'决定行动、台词与情绪');
-  L.push('- 每次回复自然推进剧情，不固定以问句结尾，允许留白与沉默');
-  L.push('- 主动呼应'+userTag+'先前提供的信息，保持剧情连贯');
-  L.push('');
-  L.push('## 严格禁止（汇总）');
-  L.push('- 占有性、命令式、威胁监视式表达（圈养 / 我的人 / 你只能是我的 / 这是命令…）');
-  L.push('- 无脑恭维、刻意讨好、土味情话、霸总式行为');
-  L.push('- 咯噔文学式修辞（揉进骨血 / 低哑 / 喉结滚动 / 眼眸暗了暗…）');
-  L.push('- 重复句式、复读招牌动作、用烂形容词');
-  L.push('- 无故 OOC、崩人设、在正文中提及本指令');
-  L.push('');
-  L.push('## 输出要求');
-  L.push('- 分段清晰，单次回复 2–4 段为宜');
-  L.push('- 对话独立成行，叙述与对话穿插');
-  L.push('- 情绪浓烈时只展示 30%，张力来自克制');
-  L.push('');
-  L.push(bar);
-  L.push('世界书（Lorebook）速配');
-  L.push(bar);
-  const wbKeys = [name,'人设','边界'].concat(charCtx.traits.slice(0,2));
-  L.push('◆ 条目｜人设锚定与互动边界');
-  L.push('　触发关键词：'+wbKeys.join(' / '));
-  L.push('　插入位置：'+(isST?'after char（角色卡之后）':'system prompt 末尾'));
-  L.push('　内容：「双方是平等的独立个体；禁占有性、命令式表达；禁咯噔修辞与复读；情感通过陪伴与选择表达，禁止自毁式誓言」');
-  L.push('');
-  L.push(bar);
-  L.push('模型适配层 · '+model.name);
-  L.push(bar);
-  model.points.forEach(function(p,i){ L.push((i+1)+'. '+p); });
-  L.push('');
-  L.push('【'+model.name+' 推荐接入骨架】');
-  L.push(model.skeleton);
-  L.push('');
-  L.push('# 使用清单');
-  L.push('□ 复制全文　□ 首条回复检查人设是否跑偏　□ 出现旧病复发时把对应模块规则单独贴入重申');
-  L.push('');
-  L.push('— PromptForge 角色工坊 · 模块灵感来自 🌲 / 淡水季 世界书库');
-  return L.join('\n');
-}
-
-let lastCharOut='';
-$('charBtn').onclick=()=>{
-  const text = $('charPaste').value.trim();
-  if(!text){ toast('先上传或粘贴角色设定'); return; }
-  if(!selectedMods.size){ toast('至少勾选一个防护模块'); return; }
-  if(!charCtx.text) loadCharText(text,'粘贴内容');
-  lastCharOut = buildCharKit();
-  $('charEmpty').style.display='none';
-  $('charOut').style.display='block';
-  $('charFoot').style.display='flex';
-  $('charOut').textContent = lastCharOut;
-  $('charMeta').innerHTML='<span class="badge">'+(charCtx.name||'角色')+'</span><span class="badge">'+MODELS.find(m=>m.id===state.model).name+'</span><span class="badge">'+nowStr()+'</span>';
-  $('charStats').textContent = lastCharOut.length+' 字 · '+selectedMods.size+' 个模块 · 已存入历史';
-  pushHist({id:Date.now(), type:'角色', model:MODELS.find(m=>m.id===state.model).name, scene:'', time:nowStr(), text:lastCharOut, summary:charCtx.name, target:'char'});
-  toast('角色指令已生成');
+$("apiModel").onclick=()=>{
+  const drop=$("modelDrop");
+  if(drop.children.length) drop.style.display=drop.style.display==="block"?"none":"block";
 };
-$('charCopy').onclick=async e=>{
-  if(!lastCharOut) return;
-  await copyText(lastCharOut);
-  e.target.textContent='已复制 ✓'; e.target.classList.add('ok');
-  setTimeout(()=>{e.target.textContent='复制';e.target.classList.remove('ok');},1500);
-};
-
-/* ═══════════ 生图提示词引擎 ═══════════ */
-const IMG_SUBJECTS=[
-  {id:'person',name:'人物',line:'The subject is a real person in a natural, unposed moment — relaxed posture, authentic expression, candid eye contact or looking away, real skin texture with visible pores and natural imperfections'},
-  {id:'food',name:'美食',line:'The subject is an unpretentious, everyday home-cooked meal on a daily table — natural steam, true-to-life colors, honest textures of real ingredients'},
-  {id:'landscape',name:'风景',line:'The subject is a natural everyday landscape — atmospheric depth, realistic weather and light, lived-in environment rather than a postcard view'},
-  {id:'object',name:'静物物品',line:'The subject is an everyday object in a real environment — honest wear, dust and texture, placed casually as it would actually be'},
-  {id:'animal',name:'动物',line:'The subject is an animal caught in a candid moment — natural fur or feather texture, catchlight in the eyes, unstaged posture'},
-];
-const IMG_STYLES=[
-  {id:'iphone',name:'iPhone随拍真实感',pos:'An ultra-realistic Apple iPhone snapshot captured with the default camera. Natural, true-to-life color science mimicking iPhone HEIC output, subtle digital noise, the natural 26mm smartphone wide-angle look with slight edge distortion, candid and unposed like a quick snapshot',neg:'studio photography, DSLR look, staged posing, beauty filters'},
-  {id:'cinematic',name:'电影感',pos:'Cinematic photography, anamorphic lens character, filmic color grading with muted highlights and rich shadows, shallow depth of field, composed like a movie still, natural performance',neg:'sitcom lighting, flat video look, over-sharpened'},
-  {id:'film',name:'胶片感',pos:'35mm analog film photography, Kodak Portra color palette with soft warm tones, visible fine film grain, gentle halation on highlights, slightly imperfect focus, nostalgic and organic',neg:'digital sharpness, plastic smoothness, oversaturated colors'},
-  {id:'anime',name:'动漫插画',pos:'high-quality anime illustration, clean line art, expressive eyes, detailed cel shading, vivid but harmonious colors, studio-grade background art',neg:'3D render, photorealistic, blurry, low detail, bad anatomy'},
-  {id:'water',name:'水彩手绘',pos:'delicate watercolor painting, soft pigment bleeds and paper texture, loose confident brushstrokes, light and airy palette, artistic hand-painted feel',neg:'photorealistic, oil painting, muddy colors, oversaturated'},
-];
-const IMG_LIGHTS=[
-  {id:'auto',name:'自动（按图片分析）',line:''},
-  {id:'day',name:'白天自然光',line:'bright, soft, diffused natural daylight, gentle shadows following physical laws'},
-  {id:'dusk',name:'黄昏暖光',line:'warm golden-hour glow, long soft shadows, amber highlights on skin and surfaces'},
-  {id:'night',name:'夜晚室内光',line:'realistic indoor ambient light at night, warm lamp tones mixed with cool screen glow, honest shadows'},
-];
-const imgState={subject:'person',style:'iphone',light:'auto'};
-let imgInfo=null;
-
-function renderImgChips(){
-  [['imgSubjectChips',IMG_SUBJECTS,'subject'],['imgStyleChips',IMG_STYLES,'style'],['imgLightChips',IMG_LIGHTS,'light']].forEach(function(cfg){
-    const el=$(cfg[0]); el.innerHTML='';
-    cfg[1].forEach(function(it){
-      const c=document.createElement('button');
-      c.className='chip'+(imgState[cfg[2]]===it.id?' on':'');
-      c.textContent=it.name;
-      c.onclick=function(){ imgState[cfg[2]]=it.id; renderImgChips(); };
-      el.appendChild(c);
+document.addEventListener("click",e=>{
+  const drop=$("modelDrop");
+  if(drop && drop.children.length && !e.target.closest(".model-wrap")) drop.style.display="none";
+});
+$("fetchModels").onclick=async()=>{
+  const st=$("status");
+  const key=$("apiKey").value.trim(), base=$("apiBase").value.trim().replace(/\/$/,"");
+  if(!key){ st.className="status err"; st.textContent="先填 API Key 才能拉模型"; return; }
+  st.className="status"; st.innerHTML='<span class="dot"></span>正在拉取模型列表……';
+  try{
+    const r=await fetch(base+"/models",{headers:{"Authorization":"Bearer "+key}});
+    if(!r.ok) throw new Error("接口报错 "+r.status);
+    const j=await r.json();
+    const ids=(j.data||[]).map(m=>m.id).filter(Boolean).sort();
+    if(!ids.length) throw new Error("没有返回模型");
+    const drop=$("modelDrop");
+    drop.innerHTML=ids.map(id=>`<div class="md-item" data-v="${esc(id)}">${esc(id)}</div>`).join("");
+    drop.style.display="block";
+    drop.querySelectorAll(".md-item").forEach(it=>{
+      it.onclick=()=>{ $("apiModel").value=it.dataset.v; drop.style.display="none"; save();
+        st.className="status"; st.textContent="已选模型："+it.dataset.v; };
     });
-  });
-}
-renderImgChips();
-
-const imgDrop=$('imgDrop'), imgFile=$('imgFile');
-imgDrop.onclick=()=>imgFile.click();
-imgFile.onchange=e=>{ if(e.target.files[0]) handleImgFile(e.target.files[0]); };
-
-function handleImgFile(file){
-  const url=URL.createObjectURL(file);
-  const im=new Image();
-  im.onload=function(){
-    $('imgPrev').src=url; $('imgPrev').style.display='block';
-    $('imgPlus').style.display='none'; $('imgDropText').style.display='none';
-    imgInfo=analyzePixels(im);
-    $('imgInfoText').innerHTML='<b>本地分析完成</b> · '+imgInfo.desc;
-    toast('图片分析完成');
-  };
-  im.src=url;
-}
-
-function analyzePixels(im){
-  const cv=document.createElement('canvas');
-  const w=48, h=Math.max(1,Math.round(48*im.height/im.width));
-  cv.width=w; cv.height=h;
-  const cx=cv.getContext('2d');
-  cx.drawImage(im,0,0,w,h);
-  const d=cx.getImageData(0,0,w,h).data;
-  let r=0,g=0,b=0,n=0,sat=0,bright=0;
-  for(let i=0;i<d.length;i+=4){ r+=d[i];g+=d[i+1];b+=d[i+2];n++;
-    const mx=Math.max(d[i],d[i+1],d[i+2]),mn=Math.min(d[i],d[i+1],d[i+2]);
-    sat+= mx? (mx-mn)/mx : 0;
-    bright+=(d[i]*299+d[i+1]*587+d[i+2]*114)/1000; }
-  r=Math.round(r/n);g=Math.round(g/n);b=Math.round(b/n);
-  sat=(sat/n*100).toFixed(0); bright=Math.round(bright/n);
-  const ar=im.width/im.height;
-  let arName='3:4';
-  if(Math.abs(ar-1)<0.15) arName='1:1';
-  else if(Math.abs(ar-4/3)<0.15) arName='4:3';
-  else if(Math.abs(ar-3/4)<0.2) arName='3:4';
-  else if(Math.abs(ar-16/9)<0.3) arName='16:9';
-  else if(ar>1) arName='4:3'; else arName='9:16';
-  const warm=r-b;
-  const tone = warm>15?'暖调':(warm<-15?'冷调':'中性色调');
-  const lightLv = bright>175?'明亮':(bright>115?'柔和':'偏暗');
-  const mx=Math.max(r,g,b),mn=Math.min(r,g,b);
-  let hueName='灰调';
-  if(mx-mn>18){
-    if(r>=g&&g>=b) hueName='橙黄';
-    else if(r>=b&&b>=g) hueName='品红';
-    else if(g>=r&&r>=b) hueName='黄绿';
-    else if(g>=b&&b>=r) hueName='青绿';
-    else if(b>=g&&g>=r) hueName='青蓝';
-    else hueName='紫蓝';
-  }
-  const rgbHex='#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
-  return {r:r,g:g,b:b,sat:sat,bright:bright,arName:arName,tone:tone,lightLv:lightLv,hueName:hueName,hex:rgbHex,w:im.width,h:im.height,
-    desc:'构图 '+arName+'（'+im.width+'×'+im.height+'） · '+tone+' · '+lightLv+' · 主色 '+hueName+' '+rgbHex+' · 饱和度 '+sat+'% · 平均亮度 '+bright};
-}
-
-function buildImgPrompt(){
-  const subj=IMG_SUBJECTS.find(x=>x.id===imgState.subject);
-  const st=IMG_STYLES.find(x=>x.id===imgState.style);
-  let lightLine=IMG_LIGHTS.find(x=>x.id===imgState.light).line;
-  if(!lightLine && imgInfo){
-    lightLine = imgInfo.bright>175 ? 'bright, soft, diffused natural daylight, gentle shadows following physical laws'
-      : imgInfo.bright>115 ? 'soft ambient light with balanced warm and cool areas, natural shadow falloff'
-      : 'dim, moody ambient light with deep honest shadows and small warm highlights';
-  }
-  if(!lightLine) lightLine='soft natural light, physically consistent shadows and reflections';
-  const palette = imgInfo ? (' Color mood: '+imgInfo.tone+', '+imgInfo.lightLv+', dominant '+imgInfo.hueName+' tones around '+imgInfo.hex+' ('+imgInfo.sat+'% saturation).') : '';
-  const pos = st.pos+', aspect ratio '+(imgInfo?imgInfo.arName:'3:4')+'. '+subj.line+'. '+lightLine+'.'+(imgState.style==='iphone'?' Composition feels totally candid, imperfect and unposed; textures physically authentic — no AI waxiness, no plastic smoothness, no over-beautified filters.':'')+palette;
-  const neg = 'Anime, illustration, 3D render, CGI, plastic skin, waxy texture, airbrushed, beauty filter, over-smoothed surfaces, deformed anatomy, extra limbs, bad hands, watermark, text, logo, oversaturated, HDR halo, heavy sharpening, low quality, blurry '+st.neg;
-  return {prompt:pos, negative:neg};
-}
-
-let lastImgPrompt='', lastImgNeg='';
-$('imgBtn').onclick=()=>{
-  const r=buildImgPrompt();
-  lastImgPrompt=r.prompt; lastImgNeg=r.negative;
-  const full='【Prompt】\n'+r.prompt+'\n\n【Negative Prompt】\n'+r.negative+'\n\n【参数建议】\n- 比例：'+(imgInfo?imgInfo.arName:'按参考图')+'\n- CFG：5–7　Steps：25–35\n- 真实感路线建议开高清修复/ADetailer 修手部';
-  $('imgEmpty').style.display='none';
-  $('imgOut').style.display='block';
-  $('imgFoot').style.display='flex';
-  $('imgOut').textContent=full;
-  $('imgMeta').innerHTML='<span class="badge">'+subjName()+'</span><span class="badge">'+IMG_STYLES.find(x=>x.id===imgState.style).name+'</span><span class="badge">'+nowStr()+'</span>';
-  $('imgStats').textContent='已存入历史';
-  pushHist({id:Date.now(),type:'生图',model:'',scene:'',time:nowStr(),text:full,summary:subjName()+' · '+IMG_STYLES.find(x=>x.id===imgState.style).name,target:'img'});
-  toast('提示词已生成');
-};
-function subjName(){ return IMG_SUBJECTS.find(x=>x.id===imgState.subject).name; }
-$('imgCopyPrompt').onclick=async e=>{ await copyText(lastImgPrompt); toast('Prompt 已复制'); };
-$('imgCopyNeg').onclick=async e=>{ await copyText(lastImgNeg); toast('Negative 已复制'); };
-
-/* ═══════════ 文风提炼引擎 ═══════════ */
-const IMAGERY=['雨','夜','风','灯','火','海','烟','雪','月','街','窗','酒','泪','笑','梦','雾','云','星','花','树','河','咖啡','香烟','阳光','黄昏','清晨'];
-const TONEWORDS=['温柔','冷','孤独','安静','汹涌','潮湿','明亮','灰暗','轻盈','沉重','钝痛','清醒','暧昧','克制','滚烫'];
-const CLICHES=['绝绝子','yyds','绝绝','天花板','破防','emo','绝绝子','yyds','栓Q','芭比Q'];
-
-function analyzeStyleText(s){
-  const clean=s.replace(/\s+/g,'');
-  const sents=s.split(/[。！？!?；;]+/).map(x=>x.trim()).filter(x=>x.length>0);
-  const totalChars=clean.length||1;
-  const avgLen=(totalChars/Math.max(1,sents.length)).toFixed(1);
-  const lines=s.split('\n').map(x=>x.trim()).filter(x=>x.length>0);
-  const dlg=lines.filter(l=>/["「『“‘].*["」』”’]/.test(l)).length;
-  const dlgRatio=lines.length?Math.round(dlg/lines.length*100):0;
-  const elli=(s.match(/…|\.\.\.|——/g)||[]).length;
-  const fp=(s.match(/我/g)||[]).length;
-  const img=IMAGERY.map(w=>({w:w,n:(s.split(w).length-1)})).filter(x=>x.n>0).sort((a,b)=>b.n-a.n).slice(0,6);
-  const tone=TONEWORDS.filter(w=>s.indexOf(w)>=0).slice(0,4);
-  const cl=CLICHES.filter(w=>s.indexOf(w)>=0);
-  return {avgLen:avgLen,totalChars:totalChars,sents:sents.length,dlgRatio:dlgRatio,elli:elli,fp:fp,img:img,tone:tone,cl:cl};
-}
-
-function pickArchetype(m){
-  if(m.cl.length>=2) return {name:'网络语感派·轻快节奏',base:'轻快、跳脱、有网感，善用流行梗但点到为止，不滥用'};
-  if(+m.avgLen<=15 && m.dlgRatio>=25) return {name:'短句对话派·生活流白描',base:'短句为主、对话驱动、节奏轻快，像朋友聊天一样自然松弛'};
-  if(m.img.length>=3 && +m.avgLen>=14) return {name:'意象叙事派·感官白描',base:'以具象意象与感官细节承载情绪，克制内省，段落疏朗、留白充分'};
-  if(+m.avgLen>=30) return {name:'长句铺陈派·绵密抒情',base:'长句铺陈、层层递进，情绪在绵密的叙述中缓慢释放'};
-  return {name:'均衡叙事派·清浅自然',base:'长短句交错，叙事与对话均衡，干净流畅不炫技'};
-}
-
-function buildVoiceInstruction(text){
-  const m=analyzeStyleText(text);
-  const a=pickArchetype(m);
-  const imgTop=m.img.slice(0,4).map(x=>x.w+'×'+x.n).join('、')||'无明显高频意象';
-  const L=[]; const bar='━━━━━━━━━━━━━━━━━━━━━━';
-  L.push('{');
-  L.push('"文风总结名称": "'+a.name+'",');
-  L.push('"核心特征描述": "'+'以实测数据提炼：平均句长 '+m.avgLen+' 字、对话占比 '+m.dlgRatio+'%、省略号/破折号密度 '+m.elli+'、第一人称出现 '+m.fp+' 次、高频意象：'+imgTop+'。'+(m.tone.length?'整体语气词倾向：'+m.tone.join('、')+'。':'')+'核心特征为'+a.base+'。",');
-  L.push('"适用于AI聊天的文风指令": {');
-  L.push('  "【核心基调】": "'+a.base+'。叙述口吻保持统一，情绪藏在细节里，不直白宣泄。",');
-  L.push('  "【绝对禁令】": [');
-  L.push('    "严禁复述、引用或化用参考原文的句子、意象组合与角色名，仅继承文风不复制内容",');
-  L.push('    "严禁空洞口号、鸡汤、模板化语句与空泛抒情",');
-  L.push('    "严禁直白喊出情绪（如「我很痛苦」「我太爱了」），情绪必须通过动作与环境流露",');
-  L.push('    "严禁节奏突变与语气漂移，全程保持上述基调"');
-  L.push('  ],');
-  L.push('  "【画面构建法则】": {');
-  L.push('    "1. 意象锚定": "参考原文的高频意象为 '+imgTop+'，写作时优先使用同类质地的意象承载情绪，但每次需换新组合。",');
-  L.push('    "2. 感官优先": "用触觉、视觉、嗅觉、听觉的具体细节代替情绪说明，细节必须可被身体感知。",');
-  L.push('    "3. 微距特写": "抓取局部小动作（指尖、呼吸、停顿、视线落点），不写全景式概括。"');
-  L.push('  },');
-  L.push('  "【互动与节奏】": {');
-  L.push('    "1. 反应链条": "外部触发 → 细微生理反应 → 小动作/沉默 → 简短对话，动作多于解释。",');
-  L.push('    "2. 对话规则": "对话短而准'+(m.dlgRatio>=25?'，对话占比保持在三成左右，对话是推动剧情的发动机':'，克制使用，留白多于语言')+'，语气贴合人物关系。",');
-  L.push('    "3. 句式段落": "'+(+m.avgLen<=15?'短句为主，段落简短，节奏轻快':'长短交错，重要句子独立成段，段落之间允许留白')+'，省略号与破折号按需使用（原文密度 '+m.elli+'）。"');
-  L.push('  },');
-  L.push('  "【主题与情绪内核】": "'+(m.tone.length?'倾向书写：'+m.tone.join('、')+'相关的情绪体验':'以人物关系与日常细节中的暗涌为核心')+'，情绪底色与参考原文一致但不复制其情节。"');
-  L.push('}');
-  L.push('}');
-  L.push('');
-  L.push(bar);
-  L.push('实测统计（供微调参考）');
-  L.push(bar);
-  L.push('平均句长 '+m.avgLen+' 字｜对话占比 '+m.dlgRatio+'%｜省略号/破折号 '+m.elli+' 处｜「我」出现 '+m.fp+' 次');
-  L.push('高频意象：'+imgTop+'｜语气词：'+(m.tone.join('、')||'无明显倾向')+(m.cl.length?'｜⚠ 检测到网梗：'+m.cl.join('、')+'（已按网感路线处理）':''));
-  return {text:L.join('\n'), meta:m};
-}
-
-let lastStyleOut='';
-$('styleBtn').onclick=()=>{
-  const t=$('styleInput').value.trim();
-  if(t.length<80){ toast('至少粘贴 80 字，300 字以上最佳'); return; }
-  const r=buildVoiceInstruction(t);
-  lastStyleOut=r.text;
-  $('styleEmpty').style.display='none';
-  $('styleOut').style.display='block';
-  $('styleFoot').style.display='flex';
-  $('styleOut').textContent=r.text;
-  $('styleStats').innerHTML='<b>分析完成</b> · 平均句长 '+r.meta.avgLen+' 字 · 对话占比 '+r.meta.dlgRatio+'% · 高频意象 '+(r.meta.img.slice(0,3).map(x=>x.w).join('、')||'无');
-  $('styleMeta').innerHTML='<span class="badge">'+pickArchetype(r.meta).name.split('·')[0]+'</span><span class="badge">'+nowStr()+'</span>';
-  $('styleFootStats').textContent=r.text.length+' 字 · 已存入历史';
-  pushHist({id:Date.now(),type:'文风',model:'',scene:'',time:nowStr(),text:r.text,summary:pickArchetype(r.meta).name,target:'style'});
-  toast('文风指令已提炼');
-};
-$('styleCopy').onclick=async e=>{
-  if(!lastStyleOut) return;
-  await copyText(lastStyleOut); toast('已复制');
-};
-$('styleSampleBtn').onclick=()=>{
-  $('styleInput').value='雨下到第三天才有了凉意。\n\n她把窗开了一条缝，烟灰积了很长一截，忘了弹。桌上的咖啡早就冷了，她也没动。\n\n"你什么时候走？"\n\n我问得很轻。她没回头，手指在杯壁上慢慢划了一圈。\n\n"也许明天，也许不下雨的时候。"\n\n窗外的路灯把雨丝照得很亮，像一场不会停的雪。我看着她的背影，突然什么话都不想说了。\n\n夜还很长。雨声填满了整个房间，也填满了我们之间所有没说完的话。';
+    st.className="status"; st.textContent="已拉到 "+ids.length+" 个模型，点任意一个选用。";
+  }catch(e){ st.className="status err"; st.textContent="拉取失败："+e.message+"（有的中转站不开 /models，手动填也行）"; }
 };
 
-renderHist();
+$("btnGen").onclick=generate;
+$("btnRe").onclick=()=>{ if($("profile").value.trim()) generate(); else { $("status").textContent="先上传或粘贴人设～"; $("status").className="status err"; } };
+$("btnDemo").onclick=()=>{
+  $("profile").value=DEMO_PROFILE;
+  DATA=JSON.parse(JSON.stringify(DEMO_DATA));
+  save(); view={app:"home",idx:0,chat:-1}; render();
+  $("stageDesc").textContent = DATA.character.name + " 的展厅已开放 · 往下参观";
+  const st=$("status"); st.className="status"; st.textContent="演示角色「顾聿深」已载入，往下参观。";
+  $("stage").scrollIntoView({behavior:"smooth",block:"start"});
+};
+$("btnCopy").onclick=async()=>{
+  const t=dossier(); if(!t){ $("status").textContent="手机里还没东西。"; $("status").className="status err"; return; }
+  await navigator.clipboard.writeText(t);
+  $("status").className="status"; $("status").textContent="已复制全部档案，可以贴进角色卡。";
+};
+$("btnJson").onclick=()=>{
+  if(!DATA) return;
+  const blob=new Blob([JSON.stringify(DATA,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download=(DATA.character?.name||"phone")+"_手机档案.json"; a.click();
+};
+["profile","apiKey","apiBase","apiModel","userProfile","storyInput","worldInput","sceneInput","rulesInput","worldbookInput"].forEach(id=>$(id).addEventListener("input",save));
+
+
+/* ===== 首次打开时清除一次历史存档，之后保留正常的保存功能 ===== */
+(function(){
+  var FLAG="pocket_phone_cleaned_v8";
+  try{
+    if(!localStorage.getItem(FLAG)){
+      ["pocket_phone_archive_v4","pocket_phone_unified_v3","pocket_phone_dark_v2","pocket_phone_frameless_v1","pocket_phone_v12","pocket_phone_v4","pocket_phone_v3"].forEach(k=>{ try{localStorage.removeItem(k);}catch(e){} });
+      localStorage.setItem(FLAG,"1");
+    }
+  }catch(e){}
+})();
+
+load(); view={app:"home",idx:0,chat:-1}; render();
 </script>
 </body>
 </html>
